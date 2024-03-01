@@ -1,0 +1,3 @@
+[workspace]
+resolver = "2"
+members = [ "wakfu-agent","wakfu-protocol", "wakfu-proxy"]
