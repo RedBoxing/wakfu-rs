@@ -23,7 +23,7 @@ impl Parse for PacketIdMap {
         let mut packets = vec![];
 
         while let Ok(id) = input.parse::<LitInt>() {
-            let id = id.base10_parse()?;
+            let id = id.base10_parse::<u32>()?;
             input.parse::<Token![:]>()?;
 
             let module: Ident = input.parse()?;
@@ -136,19 +136,19 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
         });
 
         serverbound_id_match_content.extend(quote! {
-            #clientbound_state_name::#variant_name(_) => #id,
+            #serverbound_state_name::#variant_name(_) => #id,
         });
     }
 
     if input.clientbound.packets.is_empty() {
         clientbound_id_match_content.extend(quote! {
-            _ => unreachable!("This enum is empty and can't exist");
+            _ => unreachable!("This enum is empty and can't exist")
         });
     }
 
     if input.serverbound.packets.is_empty() {
         serverbound_id_match_content.extend(quote! {
-            _ => unreachable!("This enum is empty and can't exist");
+            _ => unreachable!("This enum is empty and can't exist")
         });
     }
 
@@ -156,7 +156,7 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
         #[derive(Debug, Clone)]
         pub enum #clientbound_state_name
         where
-        Self: Sized,
+            Self: Sized,
         {
             #clientbound_enum_content
         }
@@ -164,7 +164,7 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
         #[derive(Debug, Clone)]
         pub enum #serverbound_state_name
         where
-        Self: Sized,
+            Self: Sized,
         {
             #serverbound_enum_content
         }
@@ -179,7 +179,7 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
         }
 
         #[allow(unreachable_code)]
-        impl crate::packets::ProtocolPacket for #serverbound_id_match_content {
+        impl crate::packets::ProtocolPacket for #serverbound_state_name {
             fn id(&self) -> u32 {
                 match self {
                     #serverbound_id_match_content

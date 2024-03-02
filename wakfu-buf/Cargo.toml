@@ -1,0 +1,9 @@
+[package]
+name = "wakfu-buf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+byteorder = "1.5.0"
+thiserror = "1.0.57"
+tracing = "0.1.40"
