@@ -1,0 +1,8 @@
+[package]
+name = "wakfu-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.36.0", features = ["full"] }
+wakfu-protocol = { path = "../wakfu-protocol" }

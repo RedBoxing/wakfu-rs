@@ -99,13 +99,13 @@ impl WakfuBufReadable for i16 {
 
 impl WakfuBufReadable for u8 {
     fn read_from(buf: &mut Cursor<&[u8]>) -> Result<Self, BufReadError> {
-        Ok(buf.read_u8::<BE>()?)
+        Ok(buf.read_u8()?)
     }
 }
 
 impl WakfuBufReadable for i8 {
     fn read_from(buf: &mut Cursor<&[u8]>) -> Result<Self, BufReadError> {
-        Ok(buf.read_i8::<BE>()?)
+        Ok(buf.read_i8()?)
     }
 }
 
@@ -150,6 +150,20 @@ impl<T: WakfuBufReadable> WakfuBufReadable for Vec<T> {
         }
 
         Ok(contents)
+    }
+}
+
+impl<T: WakfuBufReadable, const N: usize> WakfuBufReadable for [T; N] {
+    fn read_from(buf: &mut Cursor<&[u8]>) -> Result<Self, BufReadError> {
+        let mut contents = Vec::with_capacity(N);
+
+        for _ in 0..N {
+            contents.push(T::read_from(buf)?);
+        }
+
+        contents.try_into().map_err(|_| {
+            unreachable!("Panic is not possible since the Vec is the same size as the array")
+        })
     }
 }
 

@@ -1,0 +1,623 @@
+CLASS AD PrimitiveArrays
+	FIELD b EMPTY_BYTE_ARRAY [B
+CLASS AE PrimitiveConverter
+	METHOD c getInteger (Ljava/lang/Object;)I
+CLASS AF StringFormatter
+	FIELD a m_logger Lorg/apache/log4j/Logger;
+	FIELD b CONDITION_GLOBAL_PATTERN Ljava/util/regex/Pattern;
+	FIELD c CONDITION_LOCAL_PATTERN Ljava/util/regex/Pattern;
+	FIELD d REPLACE_BY_ARGS_PATTERN Ljava/util/regex/Pattern;
+	FIELD e REPLACE_BY_CONTEXT_INFO_PATTERN Ljava/util/regex/Pattern;
+	FIELD f REPLACE_BY_EXPRESSION_PATTERN Ljava/util/regex/Pattern;
+	FIELD g REPLACE_BY_ICON_PATTERN Ljava/util/regex/Pattern;
+	FIELD h DEFAULT_GENDER B
+	FIELD i m_gender B
+	FIELD j DEFAULT_NAME Ljava/lang/String;
+	FIELD k m_name Ljava/lang/String;
+	FIELD l m_nationName Ljava/lang/String;
+	FIELD m m_breedName Ljava/lang/String;
+	FIELD n m_textImageProvider LAM;
+	METHOD a getGender ()B
+	METHOD a setGender (B)V
+		ARG 0 gender
+	METHOD a isSex (I)Z
+		ARG 0 conditionConst
+	METHOD a getAsNumber (Ljava/lang/Object;)Ljava/lang/Number;
+	METHOD a isPlural (Ljava/lang/Object;I)Z
+		ARG 1 constant
+	METHOD a isInferiorTo (Ljava/lang/Object;IZ)Z
+		ARG 1 value
+		ARG 2 ceilValue
+	METHOD a formatArgument (Ljava/lang/Object;ZI)Ljava/lang/String;
+	METHOD a setName (Ljava/lang/String;)V
+		ARG 0 name
+	METHOD a isEqualTo (Ljava/lang/String;Ljava/lang/String;)Z
+		ARG 1 value
+	METHOD a format (Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+	METHOD b isInferiorTo (Ljava/lang/Object;I)Z
+		ARG 1 value
+	METHOD b isSuperiorTo (Ljava/lang/Object;IZ)Z
+		ARG 1 value
+		ARG 2 ceilValue
+	METHOD b setNationName (Ljava/lang/String;)V
+		ARG 0 nationName
+	METHOD c isEqualTo (Ljava/lang/Object;I)Z
+		ARG 1 value
+	METHOD c setBreedName (Ljava/lang/String;)V
+		ARG 0 breedName
+CLASS AG ContextInfo
+CLASS AK StringUtils
+	METHOD a toUTF8 (Ljava/lang/String;)[B
+CLASS AM TextImageProvider
+CLASS EI Injection
+	METHOD a getInstance ()LEI;
+	METHOD a getInstance (Ljava/lang/Class;)Ljava/lang/Object;
+CLASS Ev
+	METHOD a getString (Ljava/lang/String;)Ljava/lang/String;
+CLASS Ew PropertyException
+CLASS Fv com/ankama/wakfu/utils/metrics/MetricsManager
+	FIELD a m_registry Lcom/codahale/metrics/MetricRegistry;
+	FIELD b m_reporterProvider Ljavax/inject/Provider;
+CLASS My
+	METHOD a getString (Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+CLASS Nl com/ankamagames/baseImpl/client/proxyClient/base/network/protocol/AbstractClientMessageDecoder
+	FIELD a m_logger Lorg/apache/log4j/Logger;
+	METHOD a createMessageFromType (I)LNs;
+		ARG 1 msgType
+CLASS No com/ankamagames/baseImpl/client/proxyClient/base/network/protocol/message/ClientProxyMessage
+CLASS Np com/ankamagames/baseImpl/client/proxyClient/base/network/protocol/message/ClientVersionResultMessage
+	FIELD a m_versionMatch Z
+	FIELD b m_neededVersion [B
+	METHOD b isVersionMatch ()Z
+	METHOD c getNeededVersion ()[B
+CLASS Ns InputOnlyProxyMessage
+CLASS Nw com/ankamagames/baseImpl/client/proxyClient/base/network/protocol/message/OutputOnlyProxyMessage
+	FIELD d HEADER_SIZE I
+	METHOD a addClientHeader (B[B)[B
+		ARG 1 architectureTarget
+		ARG 2 datas
+CLASS Py
+	METHOD a getString (II[Ljava/lang/Object;)Ljava/lang/String;
+CLASS Xm com/ankamagames/baseImpl/graphics/AbstractGameClientInstance
+	FIELD a DEFAULT_USER_PREFERENCES_FILE Ljava/lang/String;
+	FIELD b GAME_PREFERENCES_PROPERTY_NAME Ljava/lang/String;
+	FIELD c HARDWARE_FEATURE_MANAGER_PROPERTY_NAME Ljava/lang/String;
+	FIELD d m_xulorScene Lamo;
+	FIELD e m_uiManager Lamn;
+	FIELD f m_backgroundScenes [Labj;
+	FIELD g m_worldScene LaaH;
+	FIELD h m_gamePreferences Lafl;
+	FIELD i m_logger Lorg/apache/log4j/Logger;
+	FIELD k BACKGROUND_SCENE_COUNT B
+	FIELD l m_contentInitializers Ljava/util/List;
+	FIELD m m_currentContentInitializerIndex I
+	FIELD n m_debugBar LafJ;
+	FIELD o m_executorService Ljava/util/concurrent/ExecutorService;
+	METHOD B onWorldSceneInitialized ()V
+	METHOD D processNextContentInitializer ()V
+	METHOD a getAppUI ()LahI;
+	METHOD a onContentInitializeStart (I)V
+		ARG 1 initializedContentInitializer
+	METHOD a initWorldScene (LaaE;)V
+		ARG 1 worldScene
+	METHOD a addDebugBarComponents (LafJ;)V
+	METHOD a setGamePreferences (Lafl;)V
+		ARG 1 gamePreferences
+	METHOD a registerContentInitializer (Lafx;)V
+		ARG 1 loader
+	METHOD a onContentInitializerDone (Lafx;I)V
+	METHOD a onContentInitializerrError (Lafx;Ljava/lang/Exception;)V
+	METHOD a initApplicationUI (Lahz;Z)Z
+		ARG 1 res
+		ARG 2 bVSync
+	METHOD a setUiManager (Lamn;)V
+		ARG 1 uiManager
+	METHOD a initXulorScene (Lamo;)V
+		ARG 1 p0
+	METHOD a initScenes (Layt;Lamp;)V
+		ARG 1 renderer
+	METHOD a initBackgroundScene (Ljava/lang/String;)V
+		ARG 1 gfxPath
+	METHOD a initializeHardwareTest (ZZ)V
+	METHOD b getXulorScene ()Lamo;
+	METHOD b onContentInitializeFinished (I)V
+		ARG 1 initializedContentInitializer
+	METHOD b fireContentInitializerDone (Lafx;)V
+		ARG 1 loader
+	METHOD c getWorldScene ()LaaH;
+	METHOD c onContentInitializerStart (Lafx;)V
+	METHOD c displayDebugBar (Z)V
+	METHOD d getBackgroundWorldScene ()[Labj;
+	METHOD e getRenderer ()Layt;
+	METHOD f initializePropertiesProvider ()V
+	METHOD g createPreferenceStore ()V
+	METHOD h getGamePreferences ()Lafl;
+	METHOD i createGamePreferences ()V
+	METHOD j initializeUserPreferences ()V
+	METHOD k initialize ()V
+	METHOD l useLuaScriptForAudio ()Z
+	METHOD m initXulor ()V
+	METHOD n registerCustomWidgets ()V
+	METHOD o createXulorScene ()Lamo;
+	METHOD p createWorldScene ()LafR;
+	METHOD q runHardwareTests ()V
+	METHOD r runBenchmarks ()V
+	METHOD s resumePostDiagnosticLoading ()V
+	METHOD t getGfxPath ()Ljava/lang/String;
+	METHOD u registerContentInitializers ()V
+	METHOD v runInitializers ()V
+	METHOD w start ()V
+	METHOD x partialCleanUp ()V
+	METHOD y cleanUp ()V
+CLASS aBO
+	METHOD a encode ([B)Z
+		ARG 1 rawDatas
+CLASS aBQ OutgoingMessage
+	METHOD b encode ()[B
+CLASS aBU com/ankamagames/framework/kernel/core/common/message/Message
+	FIELD A m_logger Lorg/apache/log4j/Logger;
+	FIELD a m_workerTimeStamp J
+	FIELD b m_messageHandler Ljava/util/concurrent/atomic/AtomicReference;
+	METHOD a getId ()I
+	METHOD a checkMessageSize (IIZ)Z
+		ARG 1 size
+		ARG 2 expectedSize
+		ARG 3 bExactSize
+	METHOD a setMessageHandler (LaBW;)V
+		ARG 1 handler
+	METHOD a_ setId (I)V
+		ARG 1 id
+	METHOD d setWorkerTimeStamp (J)V
+		ARG 1 workerTimeStamp
+	METHOD l getHandler ()LaBW;
+	METHOD m execute ()V
+	METHOD n getWorkerTimeStamp ()J
+CLASS aBW MessageHandler
+	METHOD a onMessage (LaBU;)Z
+CLASS aCL com/ankamagames/framework/kernel/core/controllers/RepeatingReleasedEventsFixer
+	METHOD a install ()V
+CLASS aCd com/ankamagames/framework/kernel/core/common/message/WakfuMessageDecoder
+	METHOD b decode (Ljava/nio/ByteBuffer;)LaBU;
+		ARG 1 p0
+CLASS aCe
+	METHOD a pushMessage (LaBU;)V
+	METHOD b getInstance ()LaCe;
+CLASS aCi com/ankamagames/framework/kernel/core/common/message/scheduler/clock/ClockMessage
+	FIELD a ID I
+	FIELD b m_clockId J
+	FIELD c m_subId I
+	FIELD d m_timeStamp J
+	METHOD a setClockId (J)V
+	METHOD b getClockId ()J
+	METHOD b setSubId (I)V
+	METHOD b setTimeStamp (J)V
+	METHOD c getSubId ()I
+	METHOD d getTimeStamp ()J
+CLASS aCj Worker
+	METHOD a getInstance ()LaCj;
+	METHOD start start ()V
+CLASS aEF com/ankamagames/framework/kernel/core/net/netty/decoder/MessageDecoder
+	FIELD a m_protocol LaEG;
+	FIELD b m_decoders Ljava/util/List;
+	METHOD <init> (LaEG;Ljava/util/Collection;)V
+		ARG 1 padapter
+		ARG 2 decoders
+	METHOD a add (LaCd;)Z
+		ARG 1 handler
+	METHOD decode decode (Lio/netty/channel/ChannelHandlerContext;Lio/netty/buffer/ByteBuf;Ljava/util/List;)V
+		ARG 1 ctx
+		ARG 2 in
+		ARG 3 out
+CLASS aEG com/ankamagames/framework/kernel/core/net/netty/decoder/ProtocolAdapter
+	METHOD a adapt (Lio/netty/buffer/ByteBuf;)Ljava/nio/ByteBuffer;
+		ARG 1 p0
+CLASS aEH com/ankamagames/framework/kernel/core/net/netty/decoder/ProtocolAdapter
+CLASS aEI com/ankamagames/framework/kernel/core/net/netty/decoder/ProtocolAdapter
+CLASS aEJ com/ankamagames/framework/kernel/core/net/netty/decoder/ProtocolAdapter
+CLASS aEK com/ankamagames/framework/kernel/core/net/netty/encoder/ByteMessageEncoder
+	METHOD a (Lio/netty/channel/ChannelHandlerContext;[BLio/netty/buffer/ByteBuf;)V
+		ARG 1 ctx
+		ARG 2 msg
+		ARG 3 out
+	METHOD encode encode (Lio/netty/channel/ChannelHandlerContext;Ljava/lang/Object;Lio/netty/buffer/ByteBuf;)V
+		ARG 1 ctx
+		ARG 2 msg
+		ARG 3 out
+CLASS aEL com/ankamagames/framework/kernel/core/net/netty/encoder/MessageEncoder
+	FIELD a LOG Lorg/slf4j/Logger;
+	METHOD encode encode (Lio/netty/channel/ChannelHandlerContext;Ljava/lang/Object;Lio/netty/buffer/ByteBuf;)V
+		ARG 1 ctx
+		ARG 2 msg
+		ARG 3 out
+CLASS aEM com/ankamagames/framework/kernel/core/net/netty/handler/LogHandler
+	FIELD a LOG Lorg/apache/log4j/Logger;
+	METHOD a format (Lio/netty/channel/ChannelHandlerContext;Ljava/lang/String;)Ljava/lang/String;
+		ARG 0 ctx
+		ARG 1 message
+	METHOD channelActive (Lio/netty/channel/ChannelHandlerContext;)V
+		ARG 1 ctx
+	METHOD channelInactive (Lio/netty/channel/ChannelHandlerContext;)V
+		ARG 1 ctx
+	METHOD exceptionCaught (Lio/netty/channel/ChannelHandlerContext;Ljava/lang/Throwable;)V
+		ARG 1 ctx
+		ARG 2 throwable
+CLASS aEN com/ankamagames/framework/kernel/core/net/netty/handler/MessageHandler
+	FIELD a m_entity Lazx;
+	FIELD b m_entityFactory LazS;
+	FIELD c m_eventsHandler LaFU;
+	METHOD <init> (LazS;LaFU;)V
+		ARG 1 entityFactory
+		ARG 2 eventsHandler
+	METHOD a (Lio/netty/channel/ChannelHandlerContext;)V
+		ARG 1 ctx
+	METHOD a (Lio/netty/channel/ChannelHandlerContext;Lio/netty/handler/ssl/SslHandshakeCompletionEvent;)V
+		ARG 1 ctx
+		ARG 2 sslHandshakeCompletionEvent
+	METHOD channelActive channelActive (Lio/netty/channel/ChannelHandlerContext;)V
+		ARG 1 ctx
+	METHOD channelInactive channelInactive (Lio/netty/channel/ChannelHandlerContext;)V
+		ARG 1 ctx
+	METHOD channelRead0 channelRead0 (Lio/netty/channel/ChannelHandlerContext;Ljava/lang/Object;)V
+		ARG 1 ctx
+		ARG 2 message
+	METHOD userEventTriggered userEventTriggered (Lio/netty/channel/ChannelHandlerContext;Ljava/lang/Object;)V
+		ARG 1 ctx
+		ARG 2 object
+CLASS aEr com/ankamagames/framework/kernel/core/net/netty/ConnectionCtx
+	FIELD a m_ctx Lio/netty/channel/ChannelHandlerContext;
+	METHOD <init> (Lio/netty/channel/ChannelHandlerContext;)V
+		ARG 1 ctx
+	METHOD a close ()Lio/netty/channel/ChannelFuture;
+	METHOD a pushMessage (LaBU;)V
+		ARG 1 message
+	METHOD b isConnected ()Z
+	METHOD d getInetAddress ()Ljava/net/InetAddress;
+CLASS aEs com/ankamagames/framework/kernel/core/net/netty/Initializer
+	FIELD a LOG_HANDLER LaEM;
+	FIELD b ENCODER LaEL;
+	FIELD c BYTE_ENCODER LaEK;
+	FIELD d m_protocol LaEG;
+	FIELD e handlerSupplier Ljava/util/function/Supplier;
+	FIELD f sslCtx Lio/netty/handler/ssl/SslContext;
+	FIELD g m_decoders Ljava/util/List;
+	METHOD <init> (LaEG;Ljava/util/function/Supplier;Lio/netty/handler/ssl/SslContext;)V
+		ARG 1 protocol
+	METHOD a addDecoder (LaCd;)V
+		ARG 1 decoder
+	METHOD initChannel initChannel (Lio/netty/channel/Channel;)V
+		ARG 1 ch
+CLASS aFU NetworkEventsHandler
+	METHOD a onNewConnection (Lazx;)V
+CLASS aIA PreferenceStore
+	METHOD a setAutoSave (Z)V
+	METHOD i load ()V
+CLASS aIF GlobalPropertiesProvider
+	METHOD a getInstance ()LaIF;
+	METHOD a setListener (LaIG;)V
+CLASS aIG com/ankamagames/framework/reflect/PropertiesProvider
+	METHOD a setPropertyValue (Ljava/lang/String;Ljava/lang/Object;)V
+CLASS aKC ParticleSoundManager
+	METHOD a setInstance (LaKC;)V
+CLASS aLp
+	METHOD g initialize ()Z
+	METHOD start start ()V
+CLASS aMB WakfuWorldScene
+CLASS aMp com/ankamagames/wakfu/client/WakfuClientInstance
+	FIELD j m_logger Lorg/apache/log4j/Logger;
+	FIELD k INSTANCE LaMp;
+	FIELD l DEFAULT_FONT_SIZE I
+	FIELD m DEFAULT_NIO_TIMEOUT I
+	FIELD n NEWS_FIRST_AWAIT_TIMEOUT J
+	FIELD o NEWS_SECOND_AWAIT_TIMEOUT J
+	FIELD p SPLIT_PATTERN Ljava/util/regex/Pattern;
+	FIELD q m_applicationUI LahI;
+	FIELD r m_lodChangeListeners Ljava/util/ArrayList;
+	METHOD D getInstance ()LaMp;
+	METHOD E getLogger ()Lorg/apache/log4j/Logger;
+	METHOD F getGameEntity ()LaYI;
+	METHOD H initSound ()Z
+	METHOD J onHardwareTestsComplete ()V
+	METHOD L removeAllLODChangeListener ()V
+	METHOD M cleanOnExitWorld ()V
+	METHOD P delayedInitialization ()V
+	METHOD R prepareLuaManager ()V
+	METHOD S loadShortcuts ()V
+	METHOD T prepareLightSceneManager ()V
+	METHOD U doCleanUp ()V
+	METHOD V loadDefaultXulorActionClasses ()V
+	METHOD a loadSoundConfig (LEv;Lafl;Lagh;)V
+	METHOD a addLODChangeListener (Labh;)V
+	METHOD b initEffectManager (Ljava/lang/String;)V
+	METHOD d setLODLevel (I)V
+CLASS aSV ChatConfigurator
+	METHOD e save ()V
+CLASS aYF WakfuClientConfigurationManager
+	METHOD a getInstance ()LaYF;
+	METHOD a setInstanceId (J)V
+	METHOD c setCharacterName (Ljava/lang/String;)V
+CLASS aYG WakfuConfiguration
+	METHOD a getInstance ()LaYG;
+	METHOD z getContentPath (Ljava/lang/String;)Ljava/lang/String;
+CLASS aYI com/ankamagames/wakfu/client/core/WakfuGameEntity
+	FIELD c m_logger Lorg/apache/log4j/Logger;
+	FIELD d m_instance LaYI;
+	FIELD f m_localAccount LaYV;
+	FIELD g m_localPlayer Lblj;
+	FIELD h m_currentLoginPhase LaYD;
+	FIELD j m_messageBoxControler LfkB;
+	METHOD P startDisconnection ()V
+	METHOD a setLocalAccount (LaYV;)V
+		ARG 1 localAccount
+	METHOD a checkMob (Lbhm;)V
+	METHOD a setObservedCharacter (LbkP;)V
+		ARG 1 info
+	METHOD a playByeEmote (LbkP;Laae;)V
+		ARG 1 localPlayer
+		ARG 2 listener
+	METHOD a setLocalPlayer (Lblj;)V
+		ARG 1 localPlayer
+	METHOD a disconnectFromServer (Ljava/lang/String;)V
+	METHOD b getEncryptedLoginAndPassword (J)[B
+		ARG 0 salt
+	METHOD j getInstance ()LaYI;
+	METHOD n getLocalAccount ()LaYV;
+CLASS aYR WakfuTranslator
+	METHOD f getInstance ()LaYR;
+CLASS aYV LocalAccountInformations
+CLASS aYv ShortcutsFieldProvider
+	METHOD a getInstance ()LaYv;
+	METHOD b initialize ()V
+CLASS aaE AleaWorldScene
+	METHOD a setGfxPath (Ljava/lang/String;)V
+CLASS aaH AleaWorldSceneWithParallax
+CLASS aae AnimationEndedListener
+CLASS abj ParallaxWorldScene
+	METHOD a setReferenceScene (LaaH;)V
+CLASS acF IsoSceneLightManager
+	FIELD a INSTANCE LacF;
+	METHOD a addScene (LacJ;)V
+CLASS adW
+	METHOD a addPositionListener (Lael;)V
+	METHOD c removePositionListener (Lael;)Z
+CLASS aea MobileManager
+	METHOD d getInstance ()Laea;
+	METHOD f removeAllMobiles ()V
+CLASS afJ DebugBar
+CLASS afR GameWorldScene
+CLASS afl GamePreferences
+	METHOD a setDefaultPreferenceStore (LaIA;)V
+	METHOD a getBooleanValue (Lafq;)Z
+	METHOD a setValue (Lafq;I)V
+	METHOD b setAccountPreferenceStore (LaIA;)V
+	METHOD c setCharacterPreferenceStore (LaIA;)V
+	METHOD f getStringValue (Lafq;)Ljava/lang/String;
+	METHOD i getDefaultPreferenceStore ()LaIA;
+CLASS afx ContentInitializer
+	METHOD a init (LXm;)V
+	METHOD n_ getName ()Ljava/lang/String;
+CLASS ahI GLApplicationUI
+	METHOD a setEventListener (LahQ;)V
+	METHOD a applyResolution (Lahz;)V
+	METHOD e initialize ()V
+	METHOD j getRenderer ()Layt;
+	METHOD x getAppFrame ()Ljavax/swing/JFrame;
+CLASS ahQ GLApplicationUIEventListener
+	METHOD A onUIClosing ()V
+	METHOD z onUIClosed ()V
+CLASS ahz ApplicationResolution
+CLASS alA LuaParticleSoundManager
+CLASS alu rAnmActionRunScriptManager
+	METHOD a setInstance (Lalu;)V
+CLASS alx BinaryAnmActionRunScriptManager
+CLASS aly BinaryParticleSoundManager
+CLASS alz LuaAnmActionRunScriptManager
+CLASS amn UIManager
+	METHOD a reloadTextures ()V
+	METHOD a setAppUI (LahI;)V
+CLASS amo UIScene
+	METHOD a addEventListener (Lamp;)V
+CLASS amu
+	METHOD a getProgressMonitor (Z)Lamv;
+	METHOD a getProgressMonitor (ZZ)Lamv;
+	METHOD b done ()V
+CLASS amv
+	METHOD a worked (I)V
+	METHOD a beginTask (Ljava/lang/String;I)V
+	METHOD b subTask (Ljava/lang/String;)V
+CLASS atm FadeManager
+	METHOD a getInstance ()Latm;
+CLASS awg HardwareFeatureManager
+	FIELD b INSTANCE Lawg;
+CLASS awh
+	METHOD a initialize ()V
+	METHOD b runTest ()Z
+	METHOD c cleanUp ()V
+CLASS awi HardwareFeatureTester
+	FIELD b INSTANCE Lawi;
+	METHOD a addTest (Lawh;)V
+CLASS ayt Renderer
+	METHOD a pushFocusController (LaCI;Z)V
+	METHOD a pushKeyboardController (LaCJ;Z)V
+	METHOD a pushMouseController (LaCK;Z)V
+	METHOD a pushScene (LayB;Z)V
+	METHOD e setSyncWait (Z)V
+CLASS azS com/ankamagames/framework/kernel/core/common/SimpleObjectFactory
+	METHOD createNew createNew ()Ljava/lang/Object;
+CLASS azV
+	METHOD a setId (J)V
+CLASS azw FrameHandler
+	METHOD a removeAllFrames ()V
+	METHOD a pushFrame (LaFS;)V
+	METHOD a setRunningFrame (Z)V
+CLASS azx com/ankamagames/framework/kernel/FrameworkEntity
+	FIELD a m_connection LaEr;
+	FIELD b ENTITY_ID Ljava/util/concurrent/atomic/AtomicInteger;
+	FIELD c m_logger Lorg/apache/log4j/Logger;
+	METHOD a sendMessage (LaBU;Z)V
+		ARG 1 message
+	METHOD a setConnection (LaEr;)V
+		ARG 1 connection
+	METHOD c onConnect ()V
+	METHOD c sendMessage (LaBU;)V
+	METHOD d onReconnect ()V
+	METHOD f onDisconnect ()V
+	METHOD g getConnection ()LaEr;
+	METHOD h closeConnection ()V
+	METHOD i isConnected ()Z
+CLASS bMU com/ankamagames/wakfu/client/core/game/steam/SteamHelper
+	METHOD a createClient ()Lcom/ankamagames/steam/client/SteamClient;
+	METHOD a initializeUserContext (Lcom/ankamagames/steam/client/SteamClient;)Z
+	METHOD b debugInfo ()V
+CLASS bSa WakfuGamePreferences
+CLASS bSh WakfuKeyPreferenceStoreEnum
+CLASS bYm LocalPartitionManager
+	METHOD g getInstance ()LbYm;
+CLASS bhm Actor
+CLASS bkP CharacterInfo
+CLASS blj LocalPlayerCharacter
+CLASS cKU
+	METHOD cm getActor ()LXs;
+CLASS cNi WakfuProgressMonitorManager
+	METHOD e getInstance ()LcNi;
+CLASS caK NetBasicsFrame
+CLASS cal com/ankamagames/wakfu/client/network/WakfuMessageDecoder
+	FIELD b decoder Lcal;
+	FIELD c m_logger Lorg/apache/log4j/Logger;
+CLASS cam
+	METHOD A GetLogin ()Ljava/lang/String;
+	METHOD B GetPassword ()Ljava/lang/String;
+	METHOD a setServerId (I)V
+		ARG 1 serverId
+	METHOD u onLogonRequest ()V
+	METHOD v onLogoffRequest ()V
+	METHOD w onGotoWorldSelectionRequest ()V
+	METHOD x onQuitRequest ()V
+CLASS cao com/ankamagames/baseImpl/client/proxyClient/base/core/ProxyClientEntity
+	FIELD c m_logger Lorg/apache/log4j/Logger;
+	FIELD d m_clientIp [B
+	FIELD e m_networkEntity Lazx;
+	FIELD f m_disconnectionReason B
+	METHOD K getNetworkEntity ()Lazx;
+	METHOD L getClientIp ()[B
+	METHOD M getDisconnectionReason ()B
+	METHOD a setDisconnectionReason (B)V
+		ARG 1 disconnectionReason
+	METHOD a setNetworkEntity (Lazx;)V
+		ARG 1 networkEntity
+	METHOD a onInvalidClientVersion ([B)V
+		ARG 1 neededVersion
+	METHOD b onQueryResult (I)V
+		ARG 1 queryResultCode
+	METHOD b setClientIp ([B)V
+		ARG 1 clientIp
+	METHOD p partialCleanUp ()V
+	METHOD q cleanUp ()V
+	METHOD s onQueueFinished ()V
+CLASS cgh com/ankamagames/wakfu/client/network/protocol/message/connection/clientToServer/ClientPublicKeyRequestMessage
+	FIELD a m_serverId B
+	METHOD <init> (B)V
+		ARG 1 serverId
+CLASS cgi com/ankamagames/wakfu/client/network/protocol/message/connection/clientToServer/ClientVersionMessage
+	FIELD a m_version [B
+	METHOD a setVersion ([B)V
+		ARG 1 version
+CLASS cgn com/ankamagames/wakfu/client/network/protocol/message/connection/serverToClient/ClientAuthenticationResultsMessage
+	FIELD a m_resultCode B
+	FIELD b m_banDuration I
+	FIELD c m_serializedAccountInformations [B
+	METHOD b isSuccessfull ()Z
+	METHOD c getErrorCode ()B
+	METHOD d getSerializedAccountInformations ()[B
+	METHOD e getBanDuration ()I
+CLASS com/ankamagames/wakfu/client/WakfuClient
+	FIELD a INSTANCE Lcom/ankamagames/wakfu/client/WakfuClient;
+	FIELD b m_logger Lorg/apache/log4j/Logger;
+	FIELD e m_startTime J
+	FIELD f m_logPath Ljava/lang/String;
+	FIELD g m_reportPath Ljava/lang/String;
+	FIELD h m_screenshotsPath Ljava/lang/String;
+	METHOD a getLogPath ()Ljava/lang/String;
+	METHOD b start ()V
+	METHOD f initSteam ()Z
+	METHOD m startClient ()V
+CLASS cvY WhoisRequestMessage
+	FIELD a m_characterName Ljava/lang/String;
+	METHOD a setCharacterName (Ljava/lang/String;)V
+		ARG 1 characterName
+CLASS cxS WakfuSoundManager
+	METHOD n getInstance ()LcxS;
+CLASS cxh ConnectionEncryptionManager
+	FIELD a INSTANCE Lcxh;
+CLASS cxl IServiceManager
+	METHOD a startServices ()V
+CLASS czH WakfuCustomWidgetRegister
+	METHOD a registerCustom ()V
+CLASS czI WakfuMessageBoxConstants
+	METHOD a getMessageBoxIconUrl (I)Ljava/lang/String;
+CLASS czz com/ankamagames/wakfu/client/steam/SteamDisplayer
+	FIELD a INSTANCE Lczz;
+	METHOD b setConnected (Z)V
+CLASS dWG com/ankamagames/wakfu/common/constants/Partner
+	FIELD d m_name Ljava/lang/String;
+	FIELD f m_enableSteam Z
+	FIELD g s_currentPartner LdWG;
+	METHOD a getCurrentPartner ()LdWG;
+	METHOD a initializeCurrentPartner (Ljava/lang/String;)V
+		ARG 0 name
+	METHOD b getName ()Ljava/lang/String;
+	METHOD d isEnableSteam ()Z
+CLASS dWT Version
+	FIELD j INTERNAL_VERSION [B
+	METHOD c format ([B)Ljava/lang/String;
+CLASS dXa
+	METHOD dP finishCurrentOccupation ()Z
+CLASS eLM
+	METHOD fH getCitizenComportment ()LeLN;
+	METHOD ha getSex ()B
+CLASS eLN
+	METHOD n getNationId ()I
+CLASS eRU
+	METHOD fH getCitizenComportment ()LeLN;
+CLASS eWC
+	METHOD b crypt ([B)[B
+CLASS faD Xulor
+	METHOD a msgBox (Ljava/lang/String;Ljava/lang/String;JII)LfkB;
+	METHOD b getInstance ()LfaD;
+CLASS fjP XulorScene
+CLASS fkB MessageBoxControler
+	METHOD a addEventListener (LfkE;)V
+	METHOD g cleanUpAndRemoveQuick ()V
+CLASS fkL NetEnabledWidgetManager
+	FIELD a INSTANCE LfkL;
+	METHOD a setGroupEnabled (Ljava/lang/String;Z)V
+CLASS fsV com/ankamagames/xulor2/property/PropertiesProvider
+	FIELD a m_logger Lorg/apache/log4j/Logger;
+	FIELD b m_instance LfsV;
+	FIELD c m_globalProperties Ljava/util/Map;
+	FIELD d m_properties Ljava/util/List;
+	FIELD e m_needProcess Ljava/util/List;
+	FIELD f m_toAddToProcess Ljava/util/Collection;
+	FIELD g m_listeners Ljava/util/List;
+	METHOD a getInstance ()LfsV;
+	METHOD a addProperty (LfsW;)V
+		ARG 1 property
+	METHOD a dispatchEvent (Lfte;LfsW;)V
+	METHOD a addPropertyListener (Lftf;)V
+		ARG 1 listener
+	METHOD b onProcess ()Z
+	METHOD b addToProcessList (LfsW;)V
+		ARG 1 property
+	METHOD b removePropertyListener (Lftf;)V
+		ARG 1 listener
+CLASS fsW com/ankamagames/xulor2/property/Property
+	METHOD a getName ()Ljava/lang/String;
+	METHOD c isLocal ()Z
+	METHOD p onProcess ()V
+CLASS ftd com/ankamagames/xulor2/property/PropertyEvent
+	FIELD a m_type Lfte;
+	FIELD b m_property LfsW;
+	METHOD a getType ()Lfte;
+	METHOD b getProperty ()LfsW;
+CLASS fte com/ankamagames/xulor2/property/PropertyEventType
+CLASS ftf com/ankamagames/xulor2/property/PropertyEventListener
+	METHOD a onPropertyEvent (Lftd;)V

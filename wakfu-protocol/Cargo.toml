@@ -6,7 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.36.0", features = ["net"] }
+tokio = { version = "1.36.0", features = ["net", "io-util"] }
 tracing = "0.1.40"
 wakfu-protocol-macros = { path = "./wakfu-protocol-macros" }
 wakfu-buf = { path = "../wakfu-buf" }
+thiserror = "1.0.57"
+tokio-native-tls = "0.3.1"
+native-tls = "0.2.11"
+bytes = "1.5.0"
+tokio-rustls = "0.25.0"
+rustls = "0.23.1"
+rustls-pki-types = "1.3.1"

@@ -109,6 +109,16 @@ impl<T: WakfuBufWritable> WakfuBufWritable for Vec<T> {
     }
 }
 
+impl<T: WakfuBufWritable, const N: usize> WakfuBufWritable for [T; N] {
+    fn write_into(&self, buf: &mut impl Write) -> Result<(), std::io::Error> {
+        for element in self {
+            element.write_into(buf)?;
+        }
+
+        Ok(())
+    }
+}
+
 impl<K: WakfuBufWritable + Eq + Hash, V: WakfuBufWritable + Eq + Hash> WakfuBufWritable
     for HashMap<K, V>
 {

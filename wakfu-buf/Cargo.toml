@@ -7,3 +7,4 @@ edition = "2021"
 byteorder = "1.5.0"
 thiserror = "1.0.57"
 tracing = "0.1.40"
+wakfu-buf-macros = { path = "./wakfu-buf-macros" }
