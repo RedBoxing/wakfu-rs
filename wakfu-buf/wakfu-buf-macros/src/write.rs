@@ -11,8 +11,12 @@ fn write_named_fields(named: &Punctuated<Field, Comma>) -> Vec<proc_macro2::Toke
 
             match field_type {
                 syn::Type::Path(_) | syn::Type::Array(_) => {
-                    quote! {
-                        wakfu_buf::WakfuBufWritable::write_into(#ident_dot_field, buf)?;
+                    if f.attrs.iter().any(|attr| attr.path().is_ident("ignore")) {
+                        quote!()
+                    } else {
+                        quote! {
+                            wakfu_buf::WakfuBufWritable::write_into(#ident_dot_field, buf)?;
+                        }
                     }
                 }
                 _ => panic!("Unsupported field type!"),

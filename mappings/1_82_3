@@ -60,10 +60,19 @@ CLASS Fv com/ankama/wakfu/utils/metrics/MetricsManager
 	FIELD b m_reporterProvider Ljavax/inject/Provider;
 CLASS My
 	METHOD a getString (Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+CLASS NA ServerPingMessage
+	FIELD a m_architectureTarget B
+	METHOD b getArchitectureTarget ()B
 CLASS Nl com/ankamagames/baseImpl/client/proxyClient/base/network/protocol/AbstractClientMessageDecoder
 	FIELD a m_logger Lorg/apache/log4j/Logger;
 	METHOD a createMessageFromType (I)LNs;
 		ARG 1 msgType
+CLASS Nm ForcedDisconnectionReasonMessage
+	FIELD a m_reason B
+	METHOD b getReason ()B
+CLASS Nn ClientIpMessage
+	FIELD a ip [B
+	METHOD b getIp ()[B
 CLASS No com/ankamagames/baseImpl/client/proxyClient/base/network/protocol/message/ClientProxyMessage
 CLASS Np com/ankamagames/baseImpl/client/proxyClient/base/network/protocol/message/ClientVersionResultMessage
 	FIELD a m_versionMatch Z
@@ -174,11 +183,12 @@ CLASS aBU com/ankamagames/framework/kernel/core/common/message/Message
 	METHOD n getWorkerTimeStamp ()J
 CLASS aBW MessageHandler
 	METHOD a onMessage (LaBU;)Z
+		ARG 1 message
 CLASS aCL com/ankamagames/framework/kernel/core/controllers/RepeatingReleasedEventsFixer
 	METHOD a install ()V
 CLASS aCd com/ankamagames/framework/kernel/core/common/message/WakfuMessageDecoder
 	METHOD b decode (Ljava/nio/ByteBuffer;)LaBU;
-		ARG 1 p0
+		ARG 1 buffer
 CLASS aCe
 	METHOD a pushMessage (LaBU;)V
 	METHOD b getInstance ()LaCe;
@@ -286,6 +296,7 @@ CLASS aEs com/ankamagames/framework/kernel/core/net/netty/Initializer
 		ARG 1 decoder
 	METHOD initChannel initChannel (Lio/netty/channel/Channel;)V
 		ARG 1 ch
+CLASS aFS MessageFrame
 CLASS aFU NetworkEventsHandler
 	METHOD a onNewConnection (Lazx;)V
 CLASS aIA PreferenceStore
@@ -331,6 +342,11 @@ CLASS aMp com/ankamagames/wakfu/client/WakfuClientInstance
 	METHOD d setLODLevel (I)V
 CLASS aSV ChatConfigurator
 	METHOD e save ()V
+CLASS aYD LoginPhase
+	FIELD e m_serverId B
+	METHOD <init> (Ljava/lang/String;IB)V
+		ARG 3 serverId
+	METHOD a getServerId ()B
 CLASS aYF WakfuClientConfigurationManager
 	METHOD a getInstance ()LaYF;
 	METHOD a setInstanceId (J)V
@@ -445,6 +461,7 @@ CLASS azS com/ankamagames/framework/kernel/core/common/SimpleObjectFactory
 	METHOD createNew createNew ()Ljava/lang/Object;
 CLASS azV
 	METHOD a setId (J)V
+	METHOD c_ getId ()J
 CLASS azw FrameHandler
 	METHOD a removeAllFrames ()V
 	METHOD a pushFrame (LaFS;)V
@@ -480,6 +497,8 @@ CLASS cKU
 CLASS cNi WakfuProgressMonitorManager
 	METHOD e getInstance ()LcNi;
 CLASS caK NetBasicsFrame
+	FIELD a m_logger Lorg/apache/log4j/Logger;
+	FIELD b m_proxyClientEntity Lcao;
 CLASS cal com/ankamagames/wakfu/client/network/WakfuMessageDecoder
 	FIELD b decoder Lcal;
 	FIELD c m_logger Lorg/apache/log4j/Logger;

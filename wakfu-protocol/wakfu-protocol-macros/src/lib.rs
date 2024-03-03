@@ -189,6 +189,7 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
 
     let mut clientbound_enum_content = quote!();
     let mut clientbound_id_match_content = quote!();
+    let mut clientbound_architecture_target_match_content = quote!();
     let mut clientbound_read_content = quote!();
     let mut clientbound_write_content = quote!();
 
@@ -207,6 +208,10 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
 
         clientbound_id_match_content.extend(quote! {
             #clientbound_state_name::#variant_name(_) => #id,
+        });
+
+        clientbound_architecture_target_match_content.extend(quote! {
+            #clientbound_state_name::#variant_name(packet) => packet.architecture_target(),
         });
 
         clientbound_read_content.extend(quote! {
@@ -276,9 +281,13 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
             _ => unreachable!("This enum is empty and can't exist")
         });
 
+        clientbound_architecture_target_match_content.extend(quote! {
+            _ => unreachable!("This enum is empty and can't existe")
+        });
+
         clientbound_write_content.extend(quote! {
             _ => unreachable!("This enum is empty and can't exist")
-        })
+        });
     }
 
     if input.serverbound.packets.is_empty() {
@@ -288,7 +297,7 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
 
         serverbound_write_content.extend(quote! {
             _ => unreachable!("This enum is empty and can't exist")
-        })
+        });
     }
 
     let content = quote! {
@@ -316,6 +325,13 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
                 }
             }
 
+            fn architecture_target(&self) -> Option<u8> {
+                use crate::packets::ClientboundPacket;
+                Some(match self {
+                    #clientbound_architecture_target_match_content
+                })
+            }
+
             fn read(id: u16, buf: &mut std::io::Cursor<&[u8]>) -> Result<Self, Box<crate::read::ReadPacketError>>
             where
             Self: Sized,
@@ -339,6 +355,10 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
                 match self {
                     #serverbound_id_match_content
                 }
+            }
+
+            fn architecture_target(&self) -> Option<u8> {
+                None
             }
 
             fn read(id: u16, buf: &mut std::io::Cursor<&[u8]>) -> Result<Self, Box<crate::read::ReadPacketError>>

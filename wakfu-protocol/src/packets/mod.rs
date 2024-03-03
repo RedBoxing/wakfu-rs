@@ -6,7 +6,7 @@ use crate::read::ReadPacketError;
 
 pub mod connection;
 
-pub const PACKET_HEADER_SIZE: usize = 5;
+pub const PACKET_HEADER_SIZE: usize = 4;
 
 pub trait ProtocolPacket
 where
@@ -14,11 +14,14 @@ where
 {
     fn id(&self) -> u16;
 
+    fn architecture_target(&self) -> Option<u8>;
+
     fn read(id: u16, buf: &mut Cursor<&[u8]>) -> Result<Self, Box<ReadPacketError>>;
 
     fn write(&self, buf: &mut impl Write) -> Result<(), std::io::Error>;
 }
 
+#[derive(Debug)]
 pub struct ProtocolPacketHeader {
     pub length: u16,
     pub architecture_target: Option<u8>, // only sent by the client

@@ -2,7 +2,8 @@
 
 use std::{io::Cursor, sync::Arc};
 
-use packets::{ProtocolPacket, ProtocolPacketHeader, PACKET_HEADER_SIZE};
+use log::debug;
+use packets::{ClientboundPacket, ProtocolPacket, ProtocolPacketHeader, PACKET_HEADER_SIZE};
 use read::ReadPacketError;
 use rustls::pki_types;
 use tokio::{
@@ -74,8 +75,9 @@ pub struct Connection {
 
 impl Connection {
     pub async fn new(address: String) -> Result<Connection, Box<dyn std::error::Error>> {
-        let mut store = tokio_rustls::rustls::RootCertStore::empty();
-        //store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+        debug!("Connecting to {}", address);
+
+        let store = tokio_rustls::rustls::RootCertStore::empty();
 
         let mut config = tokio_rustls::rustls::ClientConfig::builder()
             .with_root_certificates(store)
@@ -99,7 +101,9 @@ impl Connection {
         })
     }
 
-    pub async fn read<T: ProtocolPacket + Sized>(&mut self) -> Result<T, Box<ReadPacketError>> {
+    pub async fn read<T: ProtocolPacket + Sized + std::fmt::Debug>(
+        &mut self,
+    ) -> Result<T, Box<ReadPacketError>> {
         loop {
             let mut buffer = vec![0u8; PACKET_HEADER_SIZE];
             self.read_stream
@@ -111,7 +115,7 @@ impl Connection {
             let header = ProtocolPacketHeader::read_from(&mut buffer)
                 .map_err(|e| ReadPacketError::ReadPacketId { source: e })?;
 
-            let mut buffer = vec![0u8; header.length as usize];
+            let mut buffer = vec![0u8; header.length as usize - PACKET_HEADER_SIZE];
             self.read_stream
                 .read_exact(&mut buffer)
                 .await
@@ -120,20 +124,24 @@ impl Connection {
             let mut buffer: Cursor<&[u8]> = Cursor::new(&buffer);
             let packet: T = ProtocolPacket::read(header.id, &mut buffer)?;
 
+            debug!("Received packet {:?}", packet);
+
             return Ok(packet);
         }
     }
 
-    pub async fn write<T: ProtocolPacket + Sized>(
+    pub async fn write<T: ProtocolPacket + Sized + std::fmt::Debug>(
         &mut self,
         packet: T,
     ) -> Result<(), std::io::Error> {
+        debug!("Writing packet: {:?}", packet);
+
         let mut data = Vec::new();
         packet.write(&mut data)?;
 
         let header = ProtocolPacketHeader {
-            length: data.len() as u16,
-            architecture_target: None,
+            length: (data.len() + PACKET_HEADER_SIZE) as u16,
+            architecture_target: packet.architecture_target(),
             id: packet.id(),
         };
 

@@ -12,8 +12,14 @@ fn read_named_fields(
 
             match field_type {
                 syn::Type::Path(_) | syn::Type::Array(_) => {
-                    quote! {
-                        let #field_name = wakfu_buf::WakfuBufReadable::read_from(buf)?;
+                    if f.attrs.iter().any(|attr| attr.path().is_ident("ignore")) {
+                        quote! {
+                            let #field_name = Default::default();
+                        }
+                    } else {
+                        quote! {
+                            let #field_name = wakfu_buf::WakfuBufReadable::read_from(buf)?;
+                        }
                     }
                 }
                 _ => panic!("Unsupported field type!"),
