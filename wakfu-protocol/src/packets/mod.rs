@@ -6,7 +6,49 @@ use crate::read::ReadPacketError;
 
 pub mod connection;
 
-pub const PACKET_HEADER_SIZE: usize = 4;
+#[derive(Copy, Clone, Debug)]
+pub enum ProtocolAdapter {
+    ClientToServer,
+    ServerToClient,
+}
+
+impl ProtocolAdapter {
+    pub fn read_packet_header(
+        &self,
+        buf: &mut std::io::Cursor<&[u8]>,
+    ) -> Result<ProtocolPacketHeader, wakfu_buf::BufReadError> {
+        match self {
+            Self::ClientToServer => {
+                let length = u16::read_from(buf)?;
+                let architecture_target = u8::read_from(buf)?;
+                let id = u16::read_from(buf)?;
+
+                Ok(ProtocolPacketHeader {
+                    length,
+                    architecture_target: Some(architecture_target),
+                    id,
+                })
+            }
+            Self::ServerToClient => {
+                let length = u16::read_from(buf)?;
+                let id = u16::read_from(buf)?;
+
+                Ok(ProtocolPacketHeader {
+                    length,
+                    architecture_target: None,
+                    id,
+                })
+            }
+        }
+    }
+
+    pub fn get_header_size(&self) -> usize {
+        match self {
+            Self::ClientToServer => 5,
+            Self::ServerToClient => 4,
+        }
+    }
+}
 
 pub trait ProtocolPacket
 where
@@ -28,19 +70,6 @@ pub struct ProtocolPacketHeader {
     pub id: u16,
 }
 
-impl WakfuBufReadable for ProtocolPacketHeader {
-    fn read_from(buf: &mut Cursor<&[u8]>) -> Result<Self, wakfu_buf::BufReadError> {
-        let length = u16::read_from(buf)?;
-        let id = u16::read_from(buf)?;
-
-        Ok(ProtocolPacketHeader {
-            length,
-            architecture_target: None,
-            id,
-        })
-    }
-}
-
 impl WakfuBufWritable for ProtocolPacketHeader {
     fn write_into(&self, buf: &mut impl Write) -> Result<(), std::io::Error> {
         self.length.write_into(buf)?;
@@ -57,4 +86,37 @@ impl WakfuBufWritable for ProtocolPacketHeader {
 
 pub trait ClientboundPacket {
     fn architecture_target(&self) -> u8;
+}
+
+pub fn serialize_packet<T: ProtocolPacket>(
+    packet: T,
+    protocol_adapter: ProtocolAdapter,
+) -> Result<Vec<u8>, std::io::Error> {
+    let mut data = Vec::new();
+    packet.write(&mut data)?;
+
+    let header = ProtocolPacketHeader {
+        length: (data.len() + protocol_adapter.get_header_size()) as u16,
+        architecture_target: packet.architecture_target(),
+        id: packet.id(),
+    };
+
+    let mut buffer = Vec::new();
+    header.write_into(&mut buffer)?;
+
+    for byte in data {
+        byte.write_into(&mut buffer)?;
+    }
+
+    Ok(buffer)
+}
+
+pub fn deserialize_packet<T: ProtocolPacket>(
+    buffer: &mut std::io::Cursor<&[u8]>,
+    protocol_adapter: ProtocolAdapter,
+) -> Result<T, Box<ReadPacketError>> {
+    let header = protocol_adapter
+        .read_packet_header(buffer)
+        .map_err(|err| ReadPacketError::ReadPacketId { source: err })?;
+    T::read(header.id, buffer)
 }

@@ -58,8 +58,11 @@ CLASS Ew PropertyException
 CLASS Fv com/ankama/wakfu/utils/metrics/MetricsManager
 	FIELD a m_registry Lcom/codahale/metrics/MetricRegistry;
 	FIELD b m_reporterProvider Ljavax/inject/Provider;
+CLASS Mx
+	METHOD i getLanguage ()Ljava/lang/String;
 CLASS My
 	METHOD a getString (Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+	METHOD b getActualLocale ()LMx;
 CLASS NA ServerPingMessage
 	FIELD a m_architectureTarget B
 	METHOD b getArchitectureTarget ()B
@@ -273,6 +276,8 @@ CLASS aEN com/ankamagames/framework/kernel/core/net/netty/handler/MessageHandler
 	METHOD userEventTriggered userEventTriggered (Lio/netty/channel/ChannelHandlerContext;Ljava/lang/Object;)V
 		ARG 1 ctx
 		ARG 2 object
+CLASS aEp NetHelper
+	METHOD a ip2long ([B)J
 CLASS aEr com/ankamagames/framework/kernel/core/net/netty/ConnectionCtx
 	FIELD a m_ctx Lio/netty/channel/ChannelHandlerContext;
 	METHOD <init> (Lio/netty/channel/ChannelHandlerContext;)V
@@ -462,6 +467,10 @@ CLASS azS com/ankamagames/framework/kernel/core/common/SimpleObjectFactory
 CLASS azV
 	METHOD a setId (J)V
 	METHOD c_ getId ()J
+CLASS azY ByteArray
+	METHOD a putLong (J)V
+	METHOD a putShort (S)V
+	METHOD b put ([B)V
 CLASS azw FrameHandler
 	METHOD a removeAllFrames ()V
 	METHOD a pushFrame (LaFS;)V
@@ -489,6 +498,8 @@ CLASS bSa WakfuGamePreferences
 CLASS bSh WakfuKeyPreferenceStoreEnum
 CLASS bYm LocalPartitionManager
 	METHOD g getInstance ()LbYm;
+CLASS baZ
+	METHOD b sendSSOrequest ()V
 CLASS bhm Actor
 CLASS bkP CharacterInfo
 CLASS blj LocalPlayerCharacter
@@ -548,6 +559,11 @@ CLASS cgn com/ankamagames/wakfu/client/network/protocol/message/connection/serve
 	METHOD c getErrorCode ()B
 	METHOD d getSerializedAccountInformations ()[B
 	METHOD e getBanDuration ()I
+CLASS chl com/ankamagames/wakfu/client/network/protocol/message/game/clientToServer/auth/AuthentificationTokenRequestMessage
+	FIELD a m_logger Lorg/apache/log4j/Logger;
+	FIELD b DEBUG_MODE Z
+	FIELD c m_address J
+	FIELD e m_lang Ljava/lang/String;
 CLASS com/ankamagames/wakfu/client/WakfuClient
 	FIELD a INSTANCE Lcom/ankamagames/wakfu/client/WakfuClient;
 	FIELD b m_logger Lorg/apache/log4j/Logger;

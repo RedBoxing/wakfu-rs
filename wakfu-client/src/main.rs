@@ -1,7 +1,12 @@
-use std::error::Error;
+use std::{
+    error::Error,
+    sync::{Arc, Mutex},
+};
 
 use enumeration::{enumerate, Enumeration};
 use log::{debug, error, info};
+use tokio::sync::mpsc;
+use wakfu_buf::WakfuBufWritable;
 use wakfu_protocol::{
     packets::{
         connection::{
@@ -9,9 +14,11 @@ use wakfu_protocol::{
             clientbound_version_packet::ClientboundVersionPacket, ClientboundConnectionPacket,
             ServerboundConnectionPacket,
         },
-        ClientboundPacket,
+        deserialize_packet, ClientboundPacket, ProtocolAdapter, ProtocolPacket,
+        ProtocolPacketHeader,
     },
-    Connection,
+    Connection, ConnectionReader, ConnectionWriter, RawConnection, RawReadConnection,
+    RawWriteConnection,
 };
 
 enumerate!(pub LoginPhase(u8; u8)
@@ -26,8 +33,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
     let mut conn = Connection::new("dispatch.platforms.wakfu.com:5558".to_string()).await?;
+    let (raw_read_connection, raw_write_connection) = conn.split();
 
-    conn.write(
+    let (run_schedule_sender, run_schedule_receiver) = mpsc::unbounded_channel::<()>();
+
+    let mut conn = RawConnection::new(
+        run_schedule_sender,
+        raw_read_connection,
+        raw_write_connection,
+        conn.protocol_adapter,
+    )
+    .await;
+
+    conn.write_packet(
         ClientboundVersionPacket {
             major: 1,
             minor: 82,
@@ -38,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     )
     .await?;
 
-    conn.write(
+    conn.write_packet(
         ClientboundPublicKeyRequestPacket {
             server_id: *LoginPhase::Dispatch.value(),
         }
@@ -47,48 +65,62 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .await?;
 
     loop {
-        let packet = conn.read::<ServerboundConnectionPacket>().await?;
-        match packet {
-            ServerboundConnectionPacket::ClientIp(packet) => {
-                info!(
-                    "Got client ip: {}.{}.{}.{}",
-                    packet.ip[0], packet.ip[1], packet.ip[2], packet.ip[3]
-                );
-            }
-            ServerboundConnectionPacket::VersionResult(packet) => {
-                if packet.accepted {
-                    info!("Server accepted version");
-                } else {
-                    error!("Server refused version");
-                    break;
-                }
-            }
-            ServerboundConnectionPacket::ForceDisconnectionReason(packet) => {
-                info!(
-                    "Server forced disconnected us: {}",
-                    match packet.reason {
-                        79 => "disconnection.spam",
-                        7 => "disconnection.timeout",
-                        52 => "disconnection.kickedByReco",
-                        50 => "disconnection.kickedByAdmin",
-                        14 | 17 => "disconnection.accountBanned",
-                        49 => "disconnection.bannedByAdmin",
-                        4 => "disconnection.architectureNotReady",
-                        98 => "disconnection.sessionDestroyed",
-                        61 => "disconnection.remoteServerDoesNotAnswer",
-                        64 => "disconnection.serverShutdown",
-                        9 => "disconnection.invalidPosition",
-                        90 => "disconnection.openOfflineFlea",
-                        35 => "disconnection.serverError",
-                        33 => "disconnection.unknown",
-                        63 => "disconnection.synchronisationError",
-                        40 => "disconnection.serverFull",
-                        53 => "disconnection.timedSessionEnd",
-                        _ => "connection.closed",
-                    }
-                );
+        while let Ok(()) = run_schedule_receiver.try_recv() {}
+        run_schedule_receiver.recv().await;
+        let packets_queue = conn.incomming_packets_queue().lock()?;
+        if !packets_queue.is_empty() {
+            for raw_packet in packets_queue {
+                let packet = deserialize_packet::<ServerboundConnectionPacket>(
+                    std::io::Cursor::new(raw_packet),
+                    ProtocolAdapter::ServerToClient,
+                )?;
 
-                debug!("disconnection reason: {}", packet.reason);
+                let packet = conn.read::<ServerboundConnectionPacket>().await?;
+                debug!("Received packet: {:?}", packet);
+
+                match packet {
+                    ServerboundConnectionPacket::ClientIp(packet) => {
+                        info!(
+                            "Got client ip: {}.{}.{}.{}",
+                            packet.ip[0], packet.ip[1], packet.ip[2], packet.ip[3]
+                        );
+                    }
+                    ServerboundConnectionPacket::VersionResult(packet) => {
+                        if packet.accepted {
+                            info!("Server accepted version");
+                        } else {
+                            error!("Server refused version");
+                            break;
+                        }
+                    }
+                    ServerboundConnectionPacket::ForceDisconnectionReason(packet) => {
+                        info!(
+                            "Server forced disconnected us: {}",
+                            match packet.reason {
+                                79 => "disconnection.spam",
+                                7 => "disconnection.timeout",
+                                52 => "disconnection.kickedByReco",
+                                50 => "disconnection.kickedByAdmin",
+                                14 | 17 => "disconnection.accountBanned",
+                                49 => "disconnection.bannedByAdmin",
+                                4 => "disconnection.architectureNotReady",
+                                98 => "disconnection.sessionDestroyed",
+                                61 => "disconnection.remoteServerDoesNotAnswer",
+                                64 => "disconnection.serverShutdown",
+                                9 => "disconnection.invalidPosition",
+                                90 => "disconnection.openOfflineFlea",
+                                35 => "disconnection.serverError",
+                                33 => "disconnection.unknown",
+                                63 => "disconnection.synchronisationError",
+                                40 => "disconnection.serverFull",
+                                53 => "disconnection.timedSessionEnd",
+                                _ => "connection.closed",
+                            }
+                        );
+
+                        debug!("disconnection reason: {}", packet.reason);
+                    }
+                }
             }
         }
     }

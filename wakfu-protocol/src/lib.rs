@@ -1,24 +1,26 @@
 #![feature(error_generic_member_access)]
 
-use std::{io::Cursor, sync::Arc};
+use std::{
+    io::Cursor,
+    sync::{Arc, Mutex},
+};
 
-use log::debug;
-use packets::{ClientboundPacket, ProtocolPacket, ProtocolPacketHeader, PACKET_HEADER_SIZE};
+use log::{debug, error};
+use packets::{deserialize_packet, serialize_packet, ProtocolAdapter, ProtocolPacket};
 use read::ReadPacketError;
 use rustls::pki_types;
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf},
+    io::{AsyncRead, AsyncReadExt, AsyncWriteExt, ReadBuf, ReadHalf, WriteHalf},
     net::TcpStream,
+    sync::mpsc,
 };
 use tokio_rustls::{
-    client::TlsStream,
     rustls::{
         client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
         SignatureScheme,
     },
-    TlsConnector,
+    TlsConnector, TlsStream,
 };
-use wakfu_buf::{WakfuBufReadable, WakfuBufWritable};
 
 pub mod packets;
 pub mod read;
@@ -69,8 +71,10 @@ impl ServerCertVerifier for NoCertificateVerification {
 }
 
 pub struct Connection {
-    read_stream: ReadHalf<TlsStream<TcpStream>>,
-    write_stream: WriteHalf<TlsStream<TcpStream>>,
+    pub protocol_adapter: ProtocolAdapter,
+
+    raw_reader: Arc<Mutex<RawReadConnection>>,
+    raw_writer: Arc<Mutex<RawWriteConnection>>,
 }
 
 impl Connection {
@@ -92,68 +96,246 @@ impl Connection {
 
         let domain = pki_types::ServerName::try_from("localhost")?;
         let stream = connector.connect(domain, stream).await?;
+        let stream = TlsStream::Client(stream);
 
         let (read_stream, write_stream) = tokio::io::split(stream);
 
-        Ok(Connection {
+        let raw_reader = Arc::new(Mutex::new(RawReadConnection {
             read_stream,
+            protocol_adapter: ProtocolAdapter::ServerToClient,
+        }));
+
+        let raw_writer = Arc::new(Mutex::new(RawWriteConnection {
             write_stream,
+            protocol_adapter: ProtocolAdapter::ClientToServer,
+        }));
+
+        Ok(Connection {
+            protocol_adapter: ProtocolAdapter::ClientToServer,
+            raw_reader,
+            raw_writer,
         })
     }
 
-    pub async fn read<T: ProtocolPacket + Sized + std::fmt::Debug>(
-        &mut self,
-    ) -> Result<T, Box<ReadPacketError>> {
+    pub fn split(
+        &self,
+    ) -> (
+        Arc<Mutex<RawReadConnection>>,
+        Arc<Mutex<RawWriteConnection>>,
+    ) {
+        (self.raw_reader.clone(), self.raw_writer.clone())
+    }
+
+    /*pub fn wrap(stream: TlsStream<TcpStream>, protocol_adapter: ProtocolAdapter) -> Connection {
+        let (read_stream, write_stream) = tokio::io::split(stream);
+
+        let (outgoing_packets_sender, outgoing_packets_receiver) =
+            mpsc::unbounded_channel::<Vec<u8>>();
+        let incomming_packets_queue = Arc::new(Mutex::new(Vec::new()));
+
+        let reader = ConnectionReader {
+            incomming_packets_queue: incomming_packets_queue.clone(),
+            protocol_adapter,
+        };
+
+        let writer = ConnectionWriter {
+            outgoing_packets_sender,
+        };
+
+        let read_packets_task = tokio::spawn(reader.clone().read_task(read_stream));
+        let write_packets_task = tokio::spawn(
+            writer
+                .clone()
+                .write_task(write_stream, outgoing_packets_receiver),
+        );
+
+        Connection {
+            protocol_adapter: ProtocolAdapter::ClientToServer,
+            raw_reader: RawReadConnection {
+                read_stream,
+                protocol_adapter,
+            },
+            raw_writer: RawWriteConnection {
+                write_stream,
+                protocol_adapter,
+            },
+            reader,
+            writer,
+            read_packets_task,
+            write_packets_task,
+        }
+    }*/
+
+    pub async fn read<T: ProtocolPacket>(&mut self) -> Result<T, Box<ReadPacketError>> {
+        let raw_packet = self.raw_reader.lock().unwrap().read().await?;
+        deserialize_packet::<T>(
+            &mut std::io::Cursor::new(&raw_packet),
+            self.protocol_adapter,
+        )
+    }
+
+    pub async fn write<T: ProtocolPacket>(&mut self, packet: T) -> Result<(), std::io::Error> {
+        self.raw_writer.lock().unwrap().write(packet).await
+    }
+}
+
+pub struct RawReadConnection {
+    pub read_stream: ReadHalf<TlsStream<TcpStream>>,
+    pub protocol_adapter: ProtocolAdapter,
+}
+
+pub struct RawWriteConnection {
+    pub write_stream: WriteHalf<TlsStream<TcpStream>>,
+    pub protocol_adapter: ProtocolAdapter,
+}
+
+impl RawReadConnection {
+    pub async fn read(&mut self) -> Result<Vec<u8>, Box<ReadPacketError>> {
+        let mut header_buffer = vec![0u8; self.protocol_adapter.get_header_size()];
+        self.read_stream
+            .read_exact(&mut header_buffer)
+            .await
+            .map_err(|e| ReadPacketError::IoError { source: e })?;
+
+        let mut buffer: Cursor<&[u8]> = Cursor::new(&header_buffer);
+
+        let header = self
+            .protocol_adapter
+            .read_packet_header(&mut buffer)
+            .map_err(|e| ReadPacketError::ReadPacketId { source: e })?;
+
+        let mut buffer =
+            vec![0u8; header.length as usize - self.protocol_adapter.get_header_size()];
+        self.read_stream
+            .read_exact(&mut buffer)
+            .await
+            .map_err(|e| ReadPacketError::IoError { source: e })?;
+
+        header_buffer.append(&mut buffer);
+
+        Ok(header_buffer)
+    }
+}
+
+impl RawWriteConnection {
+    pub async fn write<T: ProtocolPacket>(&mut self, packet: T) -> Result<(), std::io::Error> {
+        let buffer = serialize_packet(packet, self.protocol_adapter)?;
+        self.write_stream.write(&buffer).await?;
+        Ok(())
+    }
+
+    pub async fn write_raw(&mut self, raw_packet: Vec<u8>) -> Result<(), std::io::Error> {
+        self.write_stream.write(&raw_packet).await?;
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct ConnectionReader {
+    pub incomming_packets_queue: Arc<Mutex<Vec<Vec<u8>>>>,
+    pub run_scheduler_sender: mpsc::UnboundedSender<()>,
+}
+
+#[derive(Clone)]
+pub struct ConnectionWriter {
+    pub outgoing_packets_sender: mpsc::UnboundedSender<Vec<u8>>,
+}
+
+impl ConnectionReader {
+    pub async fn read_task(self, reader: Arc<Mutex<RawReadConnection>>) {
         loop {
-            let mut buffer = vec![0u8; PACKET_HEADER_SIZE];
-            self.read_stream
-                .read_exact(&mut buffer)
-                .await
-                .map_err(|e| ReadPacketError::IoError { source: e })?;
+            match reader.lock().unwrap().read().await {
+                Ok(raw_packet) => match &mut self.incomming_packets_queue.lock() {
+                    Ok(queue) => {
+                        queue.push(raw_packet);
+                        if self.run_scheduler_sender.send(()).is_err() {
+                            break;
+                        }
+                    }
+                    Err(e) => {
+                        error!("Failed to add packet to queue : {}", e);
+                        break;
+                    }
+                },
+                Err(e) => {
+                    error!("Failed to read packet : {}", e)
+                }
+            }
+        }
+    }
+}
 
-            let mut buffer: Cursor<&[u8]> = Cursor::new(&buffer);
-            let header = ProtocolPacketHeader::read_from(&mut buffer)
-                .map_err(|e| ReadPacketError::ReadPacketId { source: e })?;
+impl ConnectionWriter {
+    pub async fn write_task(
+        self,
+        writer: Arc<Mutex<RawWriteConnection>>,
+        mut outgoing_packets_receiver: mpsc::UnboundedReceiver<Vec<u8>>,
+    ) {
+        while let Some(raw_packet) = outgoing_packets_receiver.recv().await {
+            if let Err(e) = writer.lock().unwrap().write_raw(raw_packet).await {
+                error!("Faied to write packet : {}", e);
+                break;
+            }
+        }
+    }
+}
 
-            let mut buffer = vec![0u8; header.length as usize - PACKET_HEADER_SIZE];
-            self.read_stream
-                .read_exact(&mut buffer)
-                .await
-                .map_err(|e| ReadPacketError::IoError { source: e })?;
+pub struct RawConnection {
+    protocol_adapter: ProtocolAdapter,
 
-            let mut buffer: Cursor<&[u8]> = Cursor::new(&buffer);
-            let packet: T = ProtocolPacket::read(header.id, &mut buffer)?;
+    reader: ConnectionReader,
+    writer: ConnectionWriter,
 
-            debug!("Received packet {:?}", packet);
+    read_packets_task: tokio::task::JoinHandle<()>,
+    write_packets_task: tokio::task::JoinHandle<()>,
+}
 
-            return Ok(packet);
+impl RawConnection {
+    pub async fn new(
+        run_scheduler_sender: mpsc::UnboundedSender<()>,
+        raw_read_connection: Arc<Mutex<RawReadConnection>>,
+        raw_write_connection: Arc<Mutex<RawWriteConnection>>,
+        protocol_adapter: ProtocolAdapter,
+    ) -> RawConnection {
+        let (outgoing_packets_sender, outgoing_packets_receiver) =
+            mpsc::unbounded_channel::<Vec<u8>>();
+        let incomming_packets_queue = Arc::new(Mutex::new(Vec::new()));
+
+        let reader = ConnectionReader {
+            incomming_packets_queue: incomming_packets_queue.clone(),
+            run_scheduler_sender,
+        };
+
+        let writer = ConnectionWriter {
+            outgoing_packets_sender,
+        };
+
+        let read_packets_task = tokio::spawn(reader.clone().read_task(raw_read_connection.clone()));
+        let write_packets_task = tokio::spawn(
+            writer
+                .clone()
+                .write_task(raw_write_connection.clone(), outgoing_packets_receiver),
+        );
+
+        RawConnection {
+            protocol_adapter,
+            reader,
+            writer,
+            read_packets_task,
+            write_packets_task,
         }
     }
 
-    pub async fn write<T: ProtocolPacket + Sized + std::fmt::Debug>(
-        &mut self,
+    pub fn write_packet<T: ProtocolPacket>(
+        &self,
         packet: T,
-    ) -> Result<(), std::io::Error> {
-        debug!("Writing packet: {:?}", packet);
-
-        let mut data = Vec::new();
-        packet.write(&mut data)?;
-
-        let header = ProtocolPacketHeader {
-            length: (data.len() + PACKET_HEADER_SIZE) as u16,
-            architecture_target: packet.architecture_target(),
-            id: packet.id(),
-        };
-
-        let mut buffer = Vec::new();
-        header.write_into(&mut buffer)?;
-
-        for byte in data {
-            byte.write_into(&mut buffer)?;
-        }
-
-        self.write_stream.write(&buffer).await?;
-
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let buffer = serialize_packet(packet, self.protocol_adapter)?;
+        self.writer.outgoing_packets_sender.send(buffer)?;
         Ok(())
+    }
+
+    pub fn incomming_packets_queue(&self) -> Arc<Mutex<Vec<Vec<u8>>>> {
+        self.reader.incomming_packets_queue.clone()
     }
 }
