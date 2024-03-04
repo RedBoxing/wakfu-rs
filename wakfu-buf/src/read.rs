@@ -142,7 +142,7 @@ impl WakfuBufReadable for String {
 
 impl<T: WakfuBufReadable> WakfuBufReadable for Vec<T> {
     fn read_from(buf: &mut Cursor<&[u8]>) -> Result<Self, BufReadError> {
-        let length = u8::read_from(buf)? as usize;
+        let length = u32::read_from(buf)? as usize;
         let mut contents = Vec::with_capacity(usize::min(length, 65536));
 
         for _ in 0..length {
@@ -171,7 +171,7 @@ impl<K: WakfuBufReadable + Eq + Hash, V: WakfuBufReadable + Eq + Hash> WakfuBufR
     for HashMap<K, V>
 {
     fn read_from(buf: &mut Cursor<&[u8]>) -> Result<Self, BufReadError> {
-        let length = u8::read_from(buf)? as usize;
+        let length = u32::read_from(buf)? as usize;
         let mut contents = HashMap::with_capacity(usize::min(length, 65536));
 
         for _ in 0..length {

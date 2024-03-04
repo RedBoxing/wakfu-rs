@@ -58,7 +58,24 @@ CLASS Ew PropertyException
 CLASS Fv com/ankama/wakfu/utils/metrics/MetricsManager
 	FIELD a m_registry Lcom/codahale/metrics/MetricRegistry;
 	FIELD b m_reporterProvider Ljavax/inject/Provider;
-CLASS Mx
+CLASS Mx com/ankamagames/baseImpl/common/clientAndServer/utils/Language
+	FIELD A LANGUAGE_MAP Ljava/util/Map;
+	FIELD n DEFAULT_LANGUAGE LMx;
+	FIELD o ALL_LANGUAGES Ljava/util/List;
+	FIELD p SEPARATOR Ljava/lang/String;
+	FIELD q LOG Lorg/apache/log4j/Logger;
+	FIELD r m_id B
+	FIELD s m_locale1 Ljava/util/Locale;
+	FIELD t m_locale2 Ljava/util/Locale;
+	FIELD u m_shortName Ljava/lang/String;
+	FIELD v m_longName Ljava/lang/String;
+	METHOD <init> (Ljava/lang/String;IBLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZ)V
+		ARG 3 id
+		ARG 4 shortName
+		ARG 5 longName
+	METHOD c getId ()B
+	METHOD d getLongName ()Ljava/lang/String;
+	METHOD h getShortName ()Ljava/lang/String;
 	METHOD i getLanguage ()Ljava/lang/String;
 CLASS My
 	METHOD a getString (Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
@@ -88,8 +105,49 @@ CLASS Nw com/ankamagames/baseImpl/client/proxyClient/base/network/protocol/messa
 	METHOD a addClientHeader (B[B)[B
 		ARG 1 architectureTarget
 		ARG 2 datas
+CLASS Pe
+	METHOD a getMaskArraySize ()I
+	METHOD a addRight ([ILPf;)V
+	METHOD a checkRights ([I[I)Z
+CLASS Pf com/ankamagames/baseImpl/common/clientAndServer/account/admin/AdminRightsEnum
+	FIELD bn m_moderationCommandProtocolIds Lgnu/trove/set/hash/TShortHashSet;
+	METHOD <init> (Ljava/lang/String;I[S)V
+		ARG 3 moderationCommandProtocolIds
+	METHOD a getRightFromCommand (S)LPf;
+		ARG 0 command
+CLASS Ph com/ankamagames/baseImpl/common/clientAndServer/account/admin/AdminRightsGroup
+	FIELD i m_id I
+	FIELD j rights [LPf;
+	METHOD <init> (Ljava/lang/String;II[LPf;)V
+		ARG 3 id
+		ARG 4 right
+	METHOD a getId ()I
+	METHOD a getRightsGroupFromId (I)LPh;
+		ARG 0 id
+	METHOD a hasRight (LPf;)Z
+		ARG 1 right
+	METHOD a fromRights ([I)LPh;
+		ARG 0 rights
+	METHOD b getRights ()[I
 CLASS Py
 	METHOD a getString (II[Ljava/lang/Object;)Ljava/lang/String;
+CLASS Wb com/ankamagames/baseImpl/common/clientAndServer/utils/Community
+	FIELD p DEFAULT_COMMUNITY LWb;
+	FIELD q m_id I
+	FIELD r m_name Ljava/lang/String;
+	FIELD s m_lang LMx;
+	METHOD <init> (Ljava/lang/String;IILjava/lang/String;)V
+		ARG 3 id
+		ARG 4 name
+	METHOD <init> (Ljava/lang/String;IILjava/lang/String;LMx;)V
+		ARG 3 id
+		ARG 4 name
+		ARG 5 lang
+	METHOD a getId ()I
+	METHOD a getFromId (I)LWb;
+		ARG 0 id
+	METHOD b getName ()Ljava/lang/String;
+	METHOD c getLanguage ()LMx;
 CLASS Xm com/ankamagames/baseImpl/graphics/AbstractGameClientInstance
 	FIELD a DEFAULT_USER_PREFERENCES_FILE Ljava/lang/String;
 	FIELD b GAME_PREFERENCES_PROPERTY_NAME Ljava/lang/String;
@@ -347,6 +405,14 @@ CLASS aMp com/ankamagames/wakfu/client/WakfuClientInstance
 	METHOD d setLODLevel (I)V
 CLASS aSV ChatConfigurator
 	METHOD e save ()V
+CLASS aYA HwidUtils
+	FIELD a m_logger Lorg/apache/log4j/Logger;
+	METHOD a isVirtualInterface (Ljava/net/NetworkInterface;)Z
+		ARG 0 networkInterface
+	METHOD a (Z)Ljava/util/Optional;
+		ARG 0 includeVirtual
+	METHOD c getHWID ()Ljava/util/Optional;
+	METHOD d getNetInterfaceMacAddress ()Ljava/util/Optional;
 CLASS aYD LoginPhase
 	FIELD e m_serverId B
 	METHOD <init> (Ljava/lang/String;IB)V
@@ -380,8 +446,11 @@ CLASS aYI com/ankamagames/wakfu/client/core/WakfuGameEntity
 	METHOD a disconnectFromServer (Ljava/lang/String;)V
 	METHOD b getEncryptedLoginAndPassword (J)[B
 		ARG 0 salt
+	METHOD c getEncryptedAuthGameToken (J)[B
+		ARG 0 salt
 	METHOD j getInstance ()LaYI;
 	METHOD n getLocalAccount ()LaYV;
+	METHOD o getCurrentLoginPhase ()LaYD;
 CLASS aYR WakfuTranslator
 	METHOD f getInstance ()LaYR;
 CLASS aYV LocalAccountInformations
@@ -468,9 +537,11 @@ CLASS azV
 	METHOD a setId (J)V
 	METHOD c_ getId ()J
 CLASS azY ByteArray
+	METHOD a putInt (I)V
 	METHOD a putLong (J)V
 	METHOD a putShort (S)V
 	METHOD b put ([B)V
+	METHOD c toArray ()[B
 CLASS azw FrameHandler
 	METHOD a removeAllFrames ()V
 	METHOD a pushFrame (LaFS;)V
@@ -490,10 +561,15 @@ CLASS azx com/ankamagames/framework/kernel/FrameworkEntity
 	METHOD g getConnection ()LaEr;
 	METHOD h closeConnection ()V
 	METHOD i isConnected ()Z
+CLASS bMS SteamClientContext
+	FIELD a INSTANCE LbMS;
+	METHOD a getClient ()Lcom/ankamagames/steam/client/SteamClient;
 CLASS bMU com/ankamagames/wakfu/client/core/game/steam/SteamHelper
 	METHOD a createClient ()Lcom/ankamagames/steam/client/SteamClient;
 	METHOD a initializeUserContext (Lcom/ankamagames/steam/client/SteamClient;)Z
 	METHOD b debugInfo ()V
+CLASS bMW
+	METHOD f getSteamID ()Lcom/ankamagames/steam/wrapper/CSteamID;
 CLASS bSa WakfuGamePreferences
 CLASS bSh WakfuKeyPreferenceStoreEnum
 CLASS bYm LocalPartitionManager
@@ -507,17 +583,43 @@ CLASS cKU
 	METHOD cm getActor ()LXs;
 CLASS cNi WakfuProgressMonitorManager
 	METHOD e getInstance ()LcNi;
+CLASS caI com/ankamagames/wakfu/client/network/protocol/frame/NetAuthenticationFrame
+	FIELD a m_logger Lorg/apache/log4j/Logger;
+	FIELD b m_instance LcaI;
+	FIELD c m_wakfuToken Ljava/lang/String;
+	METHOD a getInstance ()LcaI;
+	METHOD a onClientPublicKey (Lcgs;)V
+		ARG 0 message
+	METHOD b sendEncryptedCredentials (J)V
+		ARG 0 salt
 CLASS caK NetBasicsFrame
 	FIELD a m_logger Lorg/apache/log4j/Logger;
 	FIELD b m_proxyClientEntity Lcao;
 CLASS cal com/ankamagames/wakfu/client/network/WakfuMessageDecoder
 	FIELD b decoder Lcal;
 	FIELD c m_logger Lorg/apache/log4j/Logger;
-CLASS cam
+CLASS cam com/ankamagames/baseImpl/graphics/core/GameEntity
+	FIELD c m_logger Lorg/apache/log4j/Logger;
+	FIELD d m_login Ljava/lang/String;
+	FIELD e m_password Ljava/lang/String;
+	FIELD f m_authGameToken Ljava/lang/String;
+	FIELD g m_logged Z
+	FIELD i m_serverId I
 	METHOD A GetLogin ()Ljava/lang/String;
 	METHOD B GetPassword ()Ljava/lang/String;
+	METHOD C getAuthGameToken ()Ljava/lang/String;
+	METHOD E isLogged ()Z
+	METHOD F getServerId ()I
 	METHOD a setServerId (I)V
 		ARG 1 serverId
+	METHOD b setLogin (Ljava/lang/String;)V
+		ARG 1 login
+	METHOD b setLogged (Z)V
+		ARG 1 logged
+	METHOD c setPassword (Ljava/lang/String;)V
+		ARG 1 password
+	METHOD d setAuthGameToken (Ljava/lang/String;)V
+		ARG 1 authGameToken
 	METHOD u onLogonRequest ()V
 	METHOD v onLogoffRequest ()V
 	METHOD w onGotoWorldSelectionRequest ()V
@@ -543,6 +645,28 @@ CLASS cao com/ankamagames/baseImpl/client/proxyClient/base/core/ProxyClientEntit
 	METHOD p partialCleanUp ()V
 	METHOD q cleanUp ()V
 	METHOD s onQueueFinished ()V
+CLASS cfY com/ankamagames/wakfu/client/network/protocol/message/connection/clientToServer/ClientAuthenticationTokenMessage
+	FIELD a m_token Ljava/lang/String;
+	FIELD b hwid Ljava/lang/String;
+	METHOD a setToken (Ljava/lang/String;)V
+		ARG 1 token
+	METHOD b setHWID (Ljava/lang/String;)V
+		ARG 1 hwid
+CLASS cgb com/ankamagames/wakfu/client/network/protocol/message/connection/clientToServer/ClientDispatchAuthenticationSteamMessage
+	FIELD a m_steamId J
+	FIELD b m_ticket Lcom/ankamagames/steam/common/AuthTicket;
+	METHOD a setSteamId (J)V
+		ARG 1 steamId
+	METHOD a setTicket (Lcom/ankamagames/steam/common/AuthTicket;)V
+		ARG 1 ticket
+CLASS cgc com/ankamagames/wakfu/client/network/protocol/message/connection/clientToServer/ClientDispatchCredentialsAuthenticationMessage
+	FIELD a m_encryptedLoginAndPassword [B
+	METHOD a setEncryptedLoginAndPassword ([B)V
+		ARG 1 encryptedLoginAndPassword
+CLASS cge ClientDispatchTokenAuthenticationMessage
+	FIELD a m_encryptedToken [B
+	METHOD a setEncryptedToken ([B)V
+		ARG 1 encryptedToken
 CLASS cgh com/ankamagames/wakfu/client/network/protocol/message/connection/clientToServer/ClientPublicKeyRequestMessage
 	FIELD a m_serverId B
 	METHOD <init> (B)V
@@ -559,6 +683,20 @@ CLASS cgn com/ankamagames/wakfu/client/network/protocol/message/connection/serve
 	METHOD c getErrorCode ()B
 	METHOD d getSerializedAccountInformations ()[B
 	METHOD e getBanDuration ()I
+CLASS cgo com/ankamagames/wakfu/client/network/protocol/message/connection/serverToClient/ClientDispatchAuthenticationResultMessage
+	FIELD a m_resultCode B
+	FIELD b m_information Ljava/util/concurrent/atomic/AtomicReference;
+	METHOD b getResultCode ()B
+CLASS cgp com/ankamagames/wakfu/client/network/protocol/message/connection/serverToClient/ClientDispatchAuthenticationResultMessage_AccountInformation
+	FIELD c m_community LWb;
+	FIELD d m_adminInformation Ljava/util/Optional;
+	METHOD <init> (JJLWb;Ljava/util/Optional;Lmd;Ljava/lang/String;)V
+		ARG 5 community
+		ARG 6 adminInformation
+	METHOD a unSerialize (Ljava/io/DataInputStream;)Lcgp;
+		ARG 0 dis
+	METHOD c getCommunity ()LWb;
+	METHOD d getAdminInformation ()Ljava/util/Optional;
 CLASS cgs com/ankamagames/wakfu/client/network/protocol/message/connection/serverToClient/ClientPublicKeyMessage
 	FIELD a salt J
 	FIELD b m_publicKey [B
@@ -588,6 +726,7 @@ CLASS cxS WakfuSoundManager
 	METHOD n getInstance ()LcxS;
 CLASS cxh ConnectionEncryptionManager
 	FIELD a INSTANCE Lcxh;
+	METHOD a initialize ([B)V
 CLASS cxl IServiceManager
 	METHOD a startServices ()V
 CLASS czH WakfuCustomWidgetRegister
@@ -597,6 +736,23 @@ CLASS czI WakfuMessageBoxConstants
 CLASS czz com/ankamagames/wakfu/client/steam/SteamDisplayer
 	FIELD a INSTANCE Lczz;
 	METHOD b setConnected (Z)V
+CLASS dUE com/ankamagames/wakfu/common/account/admin
+	FIELD a m_accountId J
+	FIELD b m_adminName Ljava/lang/String;
+	FIELD c m_rights Ljava/util/List;
+	FIELD d m_wiseRights Lf;
+	METHOD <init> (JLjava/lang/String;)V
+		ARG 1 accountId
+		ARG 3 name
+	METHOD a addRights (LdUI;)Z
+CLASS dUI com/ankamagames/wakfu/common/account/admin/Right
+	FIELD a m_serverId I
+	FIELD b m_right LPh;
+	METHOD <init> (ILPh;)V
+		ARG 1 serverId
+		ARG 2 right
+	METHOD a getServerId ()I
+	METHOD b getRight ()LPh;
 CLASS dWG com/ankamagames/wakfu/common/constants/Partner
 	FIELD d m_name Ljava/lang/String;
 	FIELD f m_enableSteam Z

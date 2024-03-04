@@ -1,6 +1,8 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{braced, parse::Parse, parse_macro_input, DeriveInput, Ident, LitInt, Token};
+use syn::{
+    braced, parse::Parse, parse_macro_input, DeriveInput, FieldsNamed, Ident, LitInt, Token,
+};
 
 /*
  * Credits: https://github.com/azalea-rs/azalea/blob/main/azalea-protocol/azalea-protocol-macros/src/lib.rs
@@ -12,11 +14,26 @@ fn packet_derive(input: TokenStream, state: proc_macro2::TokenStream) -> TokenSt
     let syn::Data::Struct(syn::DataStruct { fields, .. }) = &data else {
         panic!("#[derive(*Packet)] can only be used on structs")
     };
-    let syn::Fields::Named(_) = fields else {
+    let syn::Fields::Named(FieldsNamed { named, .. }) = fields else {
         panic!("#[derive(*Packet)] can only be used on structs with named fields")
     };
 
     let variant_name = variant_from_name(&ident);
+
+    let architecture_target_field = named.iter().find(|f| {
+        f.attrs
+            .iter()
+            .any(|attr| attr.path().is_ident("architecture_target"))
+    });
+
+    let architecture_target_content = if let Some(field) = architecture_target_field {
+        let field_name = &field.ident;
+        quote! {
+            packet.#field_name = header.architecture_target.unwrap();
+        }
+    } else {
+        quote!()
+    };
 
     let content = quote! {
         impl #ident {
@@ -28,9 +45,11 @@ fn packet_derive(input: TokenStream, state: proc_macro2::TokenStream) -> TokenSt
                 wakfu_buf::WakfuBufWritable::write_into(self, buf)
             }
 
-            pub fn read(buf: &mut std::io::Cursor<&[u8]>) -> Result<#state, wakfu_buf::BufReadError> {
+            pub fn read(header: crate::packets::ProtocolPacketHeader, buf: &mut std::io::Cursor<&[u8]>) -> Result<#state, wakfu_buf::BufReadError> {
                 use wakfu_buf::WakfuBufReadable;
-                Ok(Self::read_from(buf)?.get())
+                let mut packet = Self::read_from(buf)?;
+                #architecture_target_content
+                Ok(packet.get())
             }
         }
     };
@@ -65,7 +84,7 @@ pub fn clientbound_packet(attr: TokenStream, input: TokenStream) -> TokenStream 
     content.into()
 }
 
-#[proc_macro_derive(ClientboundConnectionPacket, attributes(var))]
+#[proc_macro_derive(ClientboundConnectionPacket, attributes(architecture_target))]
 pub fn derive_clientbound_connection_packet(input: TokenStream) -> TokenStream {
     packet_derive(
         input,
@@ -216,7 +235,7 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
 
         clientbound_read_content.extend(quote! {
             #id => {
-                let data = #module::#name::read(buf).map_err(|e| crate::read::ReadPacketError::Parse {
+                let data = #module::#name::read(header, buf).map_err(|e| crate::read::ReadPacketError::Parse {
                     source: e,
                     packet_id: #id,
                     backtrace: Box::new(std::backtrace::Backtrace::capture()),
@@ -253,7 +272,7 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
 
         serverbound_read_content.extend(quote! {
             #id => {
-                let data = #module::#name::read(buf).map_err(|e| crate::read::ReadPacketError::Parse {
+                let data = #module::#name::read(header, buf).map_err(|e| crate::read::ReadPacketError::Parse {
                     source: e,
                     packet_id: #id,
                     backtrace: Box::new(std::backtrace::Backtrace::capture()),
@@ -332,13 +351,13 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
                 })
             }
 
-            fn read(id: u16, buf: &mut std::io::Cursor<&[u8]>) -> Result<Self, Box<crate::read::ReadPacketError>>
+            fn read(header: crate::packets::ProtocolPacketHeader, buf: &mut std::io::Cursor<&[u8]>) -> Result<Self, Box<crate::read::ReadPacketError>>
             where
             Self: Sized,
             {
-                Ok(match id {
+                Ok(match header.id {
                     #clientbound_read_content
-                    _ => return Err(Box::new(crate::read::ReadPacketError::UnknownPacketId { state_name: #state_name_litstr.to_string(), id })),
+                    _ => return Err(Box::new(crate::read::ReadPacketError::UnknownPacketId { state_name: #state_name_litstr.to_string(), id: header.id })),
                 })
             }
 
@@ -361,13 +380,13 @@ pub fn declare_state_packets(input: TokenStream) -> TokenStream {
                 None
             }
 
-            fn read(id: u16, buf: &mut std::io::Cursor<&[u8]>) -> Result<Self, Box<crate::read::ReadPacketError>>
+            fn read(header: crate::packets::ProtocolPacketHeader, buf: &mut std::io::Cursor<&[u8]>) -> Result<Self, Box<crate::read::ReadPacketError>>
             where
             Self:Sized,
             {
-                Ok(match id {
+                Ok(match header.id {
                     #serverbound_read_content
-                    _ => return Err(Box::new(crate::read::ReadPacketError::UnknownPacketId { state_name: #state_name_litstr.to_string(), id })),
+                    _ => return Err(Box::new(crate::read::ReadPacketError::UnknownPacketId { state_name: #state_name_litstr.to_string(), id: header.id })),
                 })
             }
 

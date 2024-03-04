@@ -58,12 +58,15 @@ where
 
     fn architecture_target(&self) -> Option<u8>;
 
-    fn read(id: u16, buf: &mut Cursor<&[u8]>) -> Result<Self, Box<ReadPacketError>>;
+    fn read(
+        id: ProtocolPacketHeader,
+        buf: &mut Cursor<&[u8]>,
+    ) -> Result<Self, Box<ReadPacketError>>;
 
     fn write(&self, buf: &mut impl Write) -> Result<(), std::io::Error>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct ProtocolPacketHeader {
     pub length: u16,
     pub architecture_target: Option<u8>, // only sent by the client
@@ -82,6 +85,12 @@ impl WakfuBufWritable for ProtocolPacketHeader {
 
         Ok(())
     }
+}
+
+#[derive(Debug)]
+pub struct ProtocolPacketWithHeader<T: ProtocolPacket> {
+    pub header: ProtocolPacketHeader,
+    pub packet: T,
 }
 
 pub trait ClientboundPacket {
@@ -114,9 +123,12 @@ pub fn serialize_packet<T: ProtocolPacket>(
 pub fn deserialize_packet<T: ProtocolPacket>(
     buffer: &mut std::io::Cursor<&[u8]>,
     protocol_adapter: ProtocolAdapter,
-) -> Result<T, Box<ReadPacketError>> {
+) -> Result<ProtocolPacketWithHeader<T>, Box<ReadPacketError>> {
     let header = protocol_adapter
         .read_packet_header(buffer)
         .map_err(|err| ReadPacketError::ReadPacketId { source: err })?;
-    T::read(header.id, buffer)
+    Ok(ProtocolPacketWithHeader {
+        header,
+        packet: T::read(header, buffer)?,
+    })
 }

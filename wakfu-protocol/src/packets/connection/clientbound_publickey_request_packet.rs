@@ -5,6 +5,7 @@ use wakfu_protocol_macros::ClientboundConnectionPacket;
 #[derive(Clone, Debug, WakfuBuf, ClientboundConnectionPacket)]
 pub struct ClientboundPublicKeyRequestPacket {
     #[ignore]
+    #[architecture_target]
     pub server_id: u8,
 }
 

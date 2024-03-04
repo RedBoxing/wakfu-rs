@@ -99,7 +99,7 @@ impl<T: WakfuBufWritable> WakfuBufWritable for Option<T> {
 
 impl<T: WakfuBufWritable> WakfuBufWritable for Vec<T> {
     fn write_into(&self, buf: &mut impl Write) -> Result<(), std::io::Error> {
-        u8::write_into(&(self.len() as u8), buf)?;
+        u32::write_into(&(self.len() as u32), buf)?;
 
         for element in self {
             element.write_into(buf)?;
@@ -123,7 +123,7 @@ impl<K: WakfuBufWritable + Eq + Hash, V: WakfuBufWritable + Eq + Hash> WakfuBufW
     for HashMap<K, V>
 {
     fn write_into(&self, buf: &mut impl Write) -> Result<(), std::io::Error> {
-        u8::write_into(&(self.len() as u8), buf)?;
+        u32::write_into(&(self.len() as u32), buf)?;
 
         for (key, value) in self {
             key.write_into(buf)?;

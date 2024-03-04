@@ -1,30 +1,18 @@
-use std::{
-    fs::File,
-    io::BufReader,
-    net::{IpAddr, Ipv4Addr, SocketAddr},
-    path::Path,
-    sync::{Arc, Mutex},
-};
+use std::{fs::File, io::BufReader, net::SocketAddr, sync::Arc};
 
 use log::{debug, error, info};
 use tokio::{
-    io::AsyncWriteExt,
     net::{TcpListener, TcpStream},
     sync::mpsc,
 };
 use tokio_rustls::{TlsAcceptor, TlsStream};
 use wakfu_protocol::{
     packets::{
-        connection::{
-            serverbound_client_ip_packet::ServerboundClientIpPacket, ClientboundConnectionPacket,
-            ServerboundConnectionPacket,
-        },
-        deserialize_packet, ProtocolAdapter, ProtocolPacket, ProtocolPacketHeader,
+        connection::{ClientboundConnectionPacket, ServerboundConnectionPacket},
+        deserialize_packet, ProtocolAdapter,
     },
     Connection, RawConnection,
 };
-
-use wakfu_buf::{WakfuBufReadable, WakfuBufWritable};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -45,15 +33,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let acceptor = TlsAcceptor::from(Arc::new(config));
 
-    debug!("Starting TCP server on port 5558...");
     let listener = TcpListener::bind("0.0.0.0:5558").await?;
 
-    debug!("Proxy server listening on port 5558");
+    info!("Proxy server listening on port 5558");
 
     loop {
         let (stream, addr) = listener.accept().await?;
         stream.set_nodelay(true)?;
-        debug!("Connection etablished, initializing ssl...");
         let acceptor = acceptor.clone();
 
         let stream = acceptor.accept(stream).await?;
@@ -69,7 +55,8 @@ async fn handle_connection(
     stream: TlsStream<TcpStream>,
     addr: SocketAddr,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    debug!("Handling connection {}", addr);
+    info!("Handling connection {}", addr);
+
     let client_conn = Connection::wrap(
         stream,
         ProtocolAdapter::ClientToServer,
@@ -91,7 +78,7 @@ async fn handle_connection(
             client_run_scheduler_sender,
             client_raw_read_connection,
             client_raw_write_connection,
-            client_conn.protocol_adapter,
+            ProtocolAdapter::ServerToClient,
         )
         .await,
     );
@@ -113,7 +100,7 @@ async fn handle_connection(
             client_run_scheduler_receiver.recv().await;
 
             let packet_queue = client_conn_1.incomming_packets_queue();
-            let packet_queue = packet_queue.lock().await;
+            let mut packet_queue = packet_queue.lock().await;
             if !packet_queue.is_empty() {
                 for raw_packet in packet_queue.iter() {
                     match deserialize_packet::<ClientboundConnectionPacket>(
@@ -121,8 +108,8 @@ async fn handle_connection(
                         ProtocolAdapter::ClientToServer,
                     ) {
                         Ok(packet) => {
-                            info!("[CLIENT->PROXY] {:?}", packet);
-                            if let Err(err) = server_conn_1.write_packet(packet) {
+                            info!("[CLIENT->SERVER] {:?}", packet.packet);
+                            if let Err(err) = server_conn_1.write_packet(packet.packet) {
                                 error!("Failed to write packet to server : {}", err);
                                 break;
                             }
@@ -133,6 +120,7 @@ async fn handle_connection(
                         }
                     }
                 }
+                packet_queue.clear();
             }
         }
     });
@@ -145,7 +133,7 @@ async fn handle_connection(
             server_run_scheduler_receiver.recv().await;
 
             let packet_queue = server_conn.incomming_packets_queue();
-            let packet_queue = packet_queue.lock().await;
+            let mut packet_queue = packet_queue.lock().await;
             if !packet_queue.is_empty() {
                 for raw_packet in packet_queue.iter() {
                     match deserialize_packet::<ServerboundConnectionPacket>(
@@ -153,8 +141,8 @@ async fn handle_connection(
                         ProtocolAdapter::ServerToClient,
                     ) {
                         Ok(packet) => {
-                            info!("[SERVER->PROXY] {:?}", packet);
-                            if let Err(err) = client_conn.write_packet(packet) {
+                            info!("[SERVER->CLIENT] {:?}", packet.packet);
+                            if let Err(err) = client_conn.write_packet(packet.packet) {
                                 error!("Failed to write packet to client : {}", err);
                                 break;
                             }
@@ -165,6 +153,8 @@ async fn handle_connection(
                         }
                     }
                 }
+
+                packet_queue.clear();
             }
         }
     });

@@ -1,3 +1,5 @@
+pub mod clientbound_dispatch_credentials_authentication_packet;
+pub mod clientbound_dispatch_token_authentication_packet;
 pub mod clientbound_publickey_request_packet;
 pub mod clientbound_version_packet;
 
@@ -12,7 +14,9 @@ declare_state_packets!(
     ConnectionPacket,
     Clientbound => {
         2: clientbound_version_packet::ClientboundVersionPacket,
-        500: clientbound_publickey_request_packet::ClientboundPublicKeyRequestPacket
+        500: clientbound_publickey_request_packet::ClientboundPublicKeyRequestPacket,
+        593: clientbound_dispatch_token_authentication_packet::ClientboundDispatchTokenAuthenticationPacket,
+        448: clientbound_dispatch_credentials_authentication_packet::ClientboundDispatchCredentialsAuthenticationPacket
     },
     Serverbound => {
         7: serverbound_version_result_packet::ServerboundVersionResultPacket,

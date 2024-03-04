@@ -4,11 +4,13 @@
 use std::{io::Cursor, sync::Arc};
 
 use log::{debug, error};
-use packets::{deserialize_packet, serialize_packet, ProtocolAdapter, ProtocolPacket};
+use packets::{
+    deserialize_packet, serialize_packet, ProtocolAdapter, ProtocolPacket, ProtocolPacketWithHeader,
+};
 use read::ReadPacketError;
 use rustls::pki_types;
 use tokio::{
-    io::{AsyncRead, AsyncReadExt, AsyncWriteExt, ReadBuf, ReadHalf, WriteHalf},
+    io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf},
     net::TcpStream,
     sync::{mpsc, Mutex},
 };
@@ -139,7 +141,9 @@ impl Connection {
         }
     }
 
-    pub async fn read<T: ProtocolPacket>(&mut self) -> Result<T, Box<ReadPacketError>> {
+    pub async fn read<T: ProtocolPacket>(
+        &mut self,
+    ) -> Result<ProtocolPacketWithHeader<T>, Box<ReadPacketError>> {
         let raw_packet = self.raw_reader.read().await?;
         deserialize_packet::<T>(
             &mut std::io::Cursor::new(&raw_packet),
