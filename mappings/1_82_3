@@ -559,6 +559,11 @@ CLASS cgn com/ankamagames/wakfu/client/network/protocol/message/connection/serve
 	METHOD c getErrorCode ()B
 	METHOD d getSerializedAccountInformations ()[B
 	METHOD e getBanDuration ()I
+CLASS cgs com/ankamagames/wakfu/client/network/protocol/message/connection/serverToClient/ClientPublicKeyMessage
+	FIELD a salt J
+	FIELD b m_publicKey [B
+	METHOD b getSalt ()J
+	METHOD c getPublicKey ()[B
 CLASS chl com/ankamagames/wakfu/client/network/protocol/message/game/clientToServer/auth/AuthentificationTokenRequestMessage
 	FIELD a m_logger Lorg/apache/log4j/Logger;
 	FIELD b DEBUG_MODE Z

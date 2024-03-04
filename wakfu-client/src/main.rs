@@ -1,7 +1,4 @@
-use std::{
-    error::Error,
-    sync::{Arc, Mutex},
-};
+use std::error::Error;
 
 use enumeration::{enumerate, Enumeration};
 use log::{debug, error, info};
@@ -32,12 +29,12 @@ enumerate!(pub LoginPhase(u8; u8)
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
-    let mut conn = Connection::new("dispatch.platforms.wakfu.com:5558".to_string()).await?;
+    let conn = Connection::new("dispatch.platforms.wakfu.com:5558".to_string()).await?;
     let (raw_read_connection, raw_write_connection) = conn.split();
 
-    let (run_schedule_sender, run_schedule_receiver) = mpsc::unbounded_channel::<()>();
+    let (run_schedule_sender, mut run_schedule_receiver) = mpsc::unbounded_channel::<()>();
 
-    let mut conn = RawConnection::new(
+    let conn = RawConnection::new(
         run_schedule_sender,
         raw_read_connection,
         raw_write_connection,
@@ -53,29 +50,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
             build_version: "-1".to_string(),
         }
         .get(),
-    )
-    .await?;
+    )?;
 
     conn.write_packet(
         ClientboundPublicKeyRequestPacket {
             server_id: *LoginPhase::Dispatch.value(),
         }
         .get(),
-    )
-    .await?;
+    )?;
 
     loop {
         while let Ok(()) = run_schedule_receiver.try_recv() {}
         run_schedule_receiver.recv().await;
-        let packets_queue = conn.incomming_packets_queue().lock()?;
+        let packet_queue = conn.incomming_packets_queue();
+        let packets_queue = packet_queue.lock().await;
         if !packets_queue.is_empty() {
-            for raw_packet in packets_queue {
+            for raw_packet in packets_queue.iter() {
                 let packet = deserialize_packet::<ServerboundConnectionPacket>(
-                    std::io::Cursor::new(raw_packet),
+                    &mut std::io::Cursor::new(raw_packet),
                     ProtocolAdapter::ServerToClient,
                 )?;
 
-                let packet = conn.read::<ServerboundConnectionPacket>().await?;
                 debug!("Received packet: {:?}", packet);
 
                 match packet {
@@ -92,6 +87,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             error!("Server refused version");
                             break;
                         }
+                    }
+                    ServerboundConnectionPacket::PublicKey(packet) => {
+                        info!("Got public key!");
                     }
                     ServerboundConnectionPacket::ForceDisconnectionReason(packet) => {
                         info!(
@@ -125,5 +123,5 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    Ok(())
+    //Ok(())
 }

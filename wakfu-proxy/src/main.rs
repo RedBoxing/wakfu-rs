@@ -19,9 +19,9 @@ use wakfu_protocol::{
             serverbound_client_ip_packet::ServerboundClientIpPacket, ClientboundConnectionPacket,
             ServerboundConnectionPacket,
         },
-        ProtocolAdapter, ProtocolPacket, ProtocolPacketHeader,
+        deserialize_packet, ProtocolAdapter, ProtocolPacket, ProtocolPacketHeader,
     },
-    Connection,
+    Connection, RawConnection,
 };
 
 use wakfu_buf::{WakfuBufReadable, WakfuBufWritable};
@@ -70,11 +70,107 @@ async fn handle_connection(
     addr: SocketAddr,
 ) -> Result<(), Box<dyn std::error::Error>> {
     debug!("Handling connection {}", addr);
-    let mut conn = Connection::wrap(
+    let client_conn = Connection::wrap(
         stream,
-        wakfu_protocol::packets::ProtocolAdapter::ClientToServer,
+        ProtocolAdapter::ClientToServer,
+        ProtocolAdapter::ServerToClient,
     );
-    //let mut client = Connection::new("dispatch.platforms.wakfu.com:5558".to_string()).await?;
+
+    let server_conn = Connection::new("dispatch.platforms.wakfu.com:5558".to_string()).await?;
+
+    let (client_raw_read_connection, client_raw_write_connection) = client_conn.split();
+    let (server_raw_read_connection, server_raw_write_connection) = server_conn.split();
+
+    let (client_run_scheduler_sender, mut client_run_scheduler_receiver) =
+        mpsc::unbounded_channel::<()>();
+    let (server_run_scheduler_sender, mut server_run_scheduler_receiver) =
+        mpsc::unbounded_channel::<()>();
+
+    let client_conn = Arc::new(
+        RawConnection::new(
+            client_run_scheduler_sender,
+            client_raw_read_connection,
+            client_raw_write_connection,
+            client_conn.protocol_adapter,
+        )
+        .await,
+    );
+    let server_conn = Arc::new(
+        RawConnection::new(
+            server_run_scheduler_sender,
+            server_raw_read_connection,
+            server_raw_write_connection,
+            server_conn.protocol_adapter,
+        )
+        .await,
+    );
+    let client_conn_1 = client_conn.clone();
+    let server_conn_1 = server_conn.clone();
+
+    let client_handler = tokio::spawn(async move {
+        loop {
+            while let Ok(()) = client_run_scheduler_receiver.try_recv() {}
+            client_run_scheduler_receiver.recv().await;
+
+            let packet_queue = client_conn_1.incomming_packets_queue();
+            let packet_queue = packet_queue.lock().await;
+            if !packet_queue.is_empty() {
+                for raw_packet in packet_queue.iter() {
+                    match deserialize_packet::<ClientboundConnectionPacket>(
+                        &mut std::io::Cursor::new(raw_packet),
+                        ProtocolAdapter::ClientToServer,
+                    ) {
+                        Ok(packet) => {
+                            info!("[CLIENT->PROXY] {:?}", packet);
+                            if let Err(err) = server_conn_1.write_packet(packet) {
+                                error!("Failed to write packet to server : {}", err);
+                                break;
+                            }
+                        }
+                        Err(err) => {
+                            error!("Failed to deserialize packet : {}", err);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    let client_conn = client_conn.clone();
+    let server_conn = server_conn.clone();
+
+    let server_handler = tokio::spawn(async move {
+        loop {
+            while let Ok(()) = server_run_scheduler_receiver.try_recv() {}
+            server_run_scheduler_receiver.recv().await;
+
+            let packet_queue = server_conn.incomming_packets_queue();
+            let packet_queue = packet_queue.lock().await;
+            if !packet_queue.is_empty() {
+                for raw_packet in packet_queue.iter() {
+                    match deserialize_packet::<ServerboundConnectionPacket>(
+                        &mut std::io::Cursor::new(raw_packet),
+                        ProtocolAdapter::ServerToClient,
+                    ) {
+                        Ok(packet) => {
+                            info!("[SERVER->PROXY] {:?}", packet);
+                            if let Err(err) = client_conn.write_packet(packet) {
+                                error!("Failed to write packet to client : {}", err);
+                                break;
+                            }
+                        }
+                        Err(err) => {
+                            error!("Failed to deserialize packet : {}", err);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    client_handler.await?;
+    server_handler.await?;
 
     Ok(())
 }
