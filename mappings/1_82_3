@@ -724,9 +724,11 @@ CLASS cvY WhoisRequestMessage
 		ARG 1 characterName
 CLASS cxS WakfuSoundManager
 	METHOD n getInstance ()LcxS;
-CLASS cxh ConnectionEncryptionManager
+CLASS cxh com/ankamagames/wakfu/client/network/security/ConnectionEncryptionManager
 	FIELD a INSTANCE Lcxh;
+	FIELD f m_keyFactory Ljava/security/KeyFactory;
 	METHOD a initialize ([B)V
+		ARG 1 rawPublicKey
 CLASS cxl IServiceManager
 	METHOD a startServices ()V
 CLASS czH WakfuCustomWidgetRegister
@@ -753,6 +755,8 @@ CLASS dUI com/ankamagames/wakfu/common/account/admin/Right
 		ARG 2 right
 	METHOD a getServerId ()I
 	METHOD b getRight ()LPh;
+CLASS dVY com/ankamagames/wakfu/client/network/security/ConnectionEncryptionConstants
+	FIELD b ALGORITHM_PARAMETERS Ljava/security/spec/AlgorithmParameterSpec;
 CLASS dWG com/ankamagames/wakfu/common/constants/Partner
 	FIELD d m_name Ljava/lang/String;
 	FIELD f m_enableSteam Z
@@ -774,8 +778,18 @@ CLASS eLN
 	METHOD n getNationId ()I
 CLASS eRU
 	METHOD fH getCitizenComportment ()LeLN;
-CLASS eWC
+CLASS eWC com/ankamagames/wakfu/client/network/security/AbstractEncryptionManager
+	FIELD b m_logger Lorg/apache/log4j/Logger;
+	FIELD c m_algorithm Ljava/lang/String;
+	FIELD e m_cipher Ljavax/crypto/Cipher;
+	METHOD <init> (Ljava/lang/String;Ljava/security/spec/AlgorithmParameterSpec;)V
+		ARG 1 algorithm
+		ARG 2 algorithmParameters
 	METHOD b crypt ([B)[B
+		ARG 1 rawData
+	METHOD c decrypt ([B)[B
+		ARG 1 encryptedData
+	METHOD d getEncodedKeySpec ([B)Ljava/security/spec/EncodedKeySpec;
 CLASS faD Xulor
 	METHOD a msgBox (Ljava/lang/String;Ljava/lang/String;JII)LfkB;
 	METHOD b getInstance ()LfaD;

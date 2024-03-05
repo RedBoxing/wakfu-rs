@@ -87,12 +87,6 @@ impl WakfuBufWritable for ProtocolPacketHeader {
     }
 }
 
-#[derive(Debug)]
-pub struct ProtocolPacketWithHeader<T: ProtocolPacket> {
-    pub header: ProtocolPacketHeader,
-    pub packet: T,
-}
-
 pub trait ClientboundPacket {
     fn architecture_target(&self) -> u8;
 }
@@ -123,12 +117,9 @@ pub fn serialize_packet<T: ProtocolPacket>(
 pub fn deserialize_packet<T: ProtocolPacket>(
     buffer: &mut std::io::Cursor<&[u8]>,
     protocol_adapter: ProtocolAdapter,
-) -> Result<ProtocolPacketWithHeader<T>, Box<ReadPacketError>> {
+) -> Result<T, Box<ReadPacketError>> {
     let header = protocol_adapter
         .read_packet_header(buffer)
         .map_err(|err| ReadPacketError::ReadPacketId { source: err })?;
-    Ok(ProtocolPacketWithHeader {
-        header,
-        packet: T::read(header, buffer)?,
-    })
+    T::read(header, buffer)
 }

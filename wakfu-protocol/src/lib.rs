@@ -4,9 +4,7 @@
 use std::{io::Cursor, sync::Arc};
 
 use log::{debug, error};
-use packets::{
-    deserialize_packet, serialize_packet, ProtocolAdapter, ProtocolPacket, ProtocolPacketWithHeader,
-};
+use packets::{deserialize_packet, serialize_packet, ProtocolAdapter, ProtocolPacket};
 use read::ReadPacketError;
 use rustls::pki_types;
 use tokio::{
@@ -70,15 +68,13 @@ impl ServerCertVerifier for NoCertificateVerification {
     }
 }
 
-pub struct Connection {
-    pub protocol_adapter: ProtocolAdapter,
-
+pub struct RawConnection {
     raw_reader: RawReadConnection,
     raw_writer: RawWriteConnection,
 }
 
-impl Connection {
-    pub async fn new(address: String) -> Result<Connection, Box<dyn std::error::Error>> {
+impl RawConnection {
+    pub async fn new_client(address: String) -> Result<Self, Box<dyn std::error::Error>> {
         debug!("Connecting to {}", address);
 
         let store = tokio_rustls::rustls::RootCertStore::empty();
@@ -110,8 +106,7 @@ impl Connection {
             protocol_adapter: ProtocolAdapter::ClientToServer,
         };
 
-        Ok(Connection {
-            protocol_adapter: ProtocolAdapter::ClientToServer,
+        Ok(Self {
             raw_reader,
             raw_writer,
         })
@@ -125,11 +120,10 @@ impl Connection {
         stream: TlsStream<TcpStream>,
         read_protocol_adapter: ProtocolAdapter,
         write_protocol_adapter: ProtocolAdapter,
-    ) -> Connection {
+    ) -> Self {
         let (read_stream, write_stream) = tokio::io::split(stream);
 
-        Connection {
-            protocol_adapter: read_protocol_adapter,
+        Self {
             raw_reader: RawReadConnection {
                 read_stream: Arc::new(Mutex::new(read_stream)),
                 protocol_adapter: read_protocol_adapter,
@@ -141,13 +135,11 @@ impl Connection {
         }
     }
 
-    pub async fn read<T: ProtocolPacket>(
-        &mut self,
-    ) -> Result<ProtocolPacketWithHeader<T>, Box<ReadPacketError>> {
+    pub async fn read<T: ProtocolPacket>(&mut self) -> Result<T, Box<ReadPacketError>> {
         let raw_packet = self.raw_reader.read().await?;
         deserialize_packet::<T>(
             &mut std::io::Cursor::new(&raw_packet),
-            self.protocol_adapter,
+            self.raw_reader.protocol_adapter,
         )
     }
 
@@ -192,7 +184,6 @@ impl RawReadConnection {
             .map_err(|e| ReadPacketError::IoError { source: e })?;
 
         header_buffer.append(&mut buffer);
-
         Ok(header_buffer)
     }
 }
@@ -212,8 +203,7 @@ impl RawWriteConnection {
 
 #[derive(Clone)]
 pub struct ConnectionReader {
-    pub incomming_packets_queue: Arc<Mutex<Vec<Vec<u8>>>>,
-    pub run_scheduler_sender: mpsc::UnboundedSender<()>,
+    pub packet_event_sender: mpsc::UnboundedSender<Vec<u8>>,
 }
 
 #[derive(Clone)]
@@ -226,8 +216,7 @@ impl ConnectionReader {
         loop {
             match reader.read().await {
                 Ok(raw_packet) => {
-                    self.incomming_packets_queue.lock().await.push(raw_packet);
-                    if self.run_scheduler_sender.send(()).is_err() {
+                    if self.packet_event_sender.send(raw_packet).is_err() {
                         break;
                     }
                 }
@@ -255,7 +244,7 @@ impl ConnectionWriter {
     }
 }
 
-pub struct RawConnection {
+pub struct Connection {
     protocol_adapter: ProtocolAdapter,
 
     reader: ConnectionReader,
@@ -265,20 +254,35 @@ pub struct RawConnection {
     write_packets_task: tokio::task::JoinHandle<()>,
 }
 
-impl RawConnection {
-    pub async fn new(
-        run_scheduler_sender: mpsc::UnboundedSender<()>,
-        raw_read_connection: RawReadConnection,
-        raw_write_connection: RawWriteConnection,
-        protocol_adapter: ProtocolAdapter,
-    ) -> RawConnection {
+impl Connection {
+    pub async fn new_client(
+        address: String,
+    ) -> Result<(Self, mpsc::UnboundedReceiver<Vec<u8>>), Box<dyn std::error::Error>> {
+        let raw_connection = RawConnection::new_client(address).await?;
+        Ok(Self::from_raw(raw_connection))
+    }
+
+    pub fn write_packet<T: ProtocolPacket + std::fmt::Debug>(
+        &self,
+        packet: T,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        debug!("Writing packet : {:?}", packet);
+        let buffer = serialize_packet(packet, self.protocol_adapter)?;
+        self.writer.outgoing_packets_sender.send(buffer)?;
+        Ok(())
+    }
+
+    pub fn from_raw(raw_connetion: RawConnection) -> (Self, mpsc::UnboundedReceiver<Vec<u8>>) {
+        let (packet_event_sender, packet_event_receiver) = mpsc::unbounded_channel::<Vec<u8>>();
+        let (raw_read_connection, raw_write_connection) = raw_connetion.split();
+
+        let protocol_adapter = raw_write_connection.protocol_adapter;
+
         let (outgoing_packets_sender, outgoing_packets_receiver) =
             mpsc::unbounded_channel::<Vec<u8>>();
-        let incomming_packets_queue = Arc::new(Mutex::new(Vec::new()));
 
         let reader = ConnectionReader {
-            incomming_packets_queue: incomming_packets_queue.clone(),
-            run_scheduler_sender,
+            packet_event_sender,
         };
 
         let writer = ConnectionWriter {
@@ -292,26 +296,15 @@ impl RawConnection {
                 .write_task(raw_write_connection, outgoing_packets_receiver),
         );
 
-        RawConnection {
-            protocol_adapter,
-            reader,
-            writer,
-            read_packets_task,
-            write_packets_task,
-        }
-    }
-
-    pub fn write_packet<T: ProtocolPacket + std::fmt::Debug>(
-        &self,
-        packet: T,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        debug!("Writing packet : {:?}", packet);
-        let buffer = serialize_packet(packet, self.protocol_adapter)?;
-        self.writer.outgoing_packets_sender.send(buffer)?;
-        Ok(())
-    }
-
-    pub fn incomming_packets_queue(&self) -> Arc<Mutex<Vec<Vec<u8>>>> {
-        self.reader.incomming_packets_queue.clone()
+        (
+            Connection {
+                protocol_adapter,
+                reader,
+                writer,
+                read_packets_task,
+                write_packets_task,
+            },
+            packet_event_receiver,
+        )
     }
 }

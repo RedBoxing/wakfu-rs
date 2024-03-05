@@ -1,0 +1,7 @@
+[package]
+name = "wakfu-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+enumeration = "1.2.2"
